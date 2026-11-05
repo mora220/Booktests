@@ -7169,7 +7169,7 @@ function renderLevel(){
 function renderLang(){
   bclock.hidden=true;
   app.innerHTML=`<section class="langpick">
-    <div class="hero"><h1>محاكاة مقياس موهبة<br>Mawhiba Test Practice</h1><p>اختر لغة الموقع · Choose your language</p><span class="by">موهبة إكسبريس · Mawhiba Express</span></div>
+    <div class="hero"><h1>تجميعات اكسترا<br>Extra Compilations</h1><p>اختر لغة الموقع · Choose your language</p><span class="by">موهبة إكسبريس · Mawhiba Express</span></div>
     <div class="langs">
       <button type="button" data-l="ar" dir="rtl"><b>العربية</b><span>الأسئلة والواجهة باللغة العربية</span></button>
       <button type="button" data-l="en" dir="ltr"><b>English</b><span>Questions and interface in English</span></button>
@@ -7642,21 +7642,21 @@ A.onAuthStateChanged(auth,async user=>{
   if(!user){if(window.__sessUnsub){window.__sessUnsub();window.__sessUnsub=null;}const k=window.__kicked;window.__kicked=false;window.MR.onUser(null,k?"kicked":undefined);return;}
   try{
     if(user.email===ADMIN_EMAIL){window.MR.onUser({code:"ragab",role:"admin",kids:[],levels:[1,2,3]});return;}
-    const s=await F.getDoc(F.doc(db,"users",user.uid));
+    let s;try{s=await F.getDoc(F.doc(db,"users",user.uid));}catch(e1){if(e1.code!=="permission-denied"&&e1.code!=="unavailable")throw e1;await user.getIdToken(true);await new Promise(r=>setTimeout(r,700));s=await F.getDoc(F.doc(db,"users",user.uid));}
     if(!s.exists()){window.MR.onUser(null,"notLinked");await A.signOut(auth);return;}
     const d=s.data();
     if(d.active===false){window.MR.onUser(null,"disabled");await A.signOut(auth);return;}
     const key="qs-session-"+user.uid;let sid=null;try{sid=JSON.parse(localStorage.getItem(key)||"null")}catch(_){}
     const cur=d.session||null;
     if(window.__freshLogin||!sid||!cur){
-      sid=Math.random().toString(36).slice(2)+Date.now().toString(36);try{localStorage.setItem(key,JSON.stringify(sid))}catch(_){}
+      sid=Math.random().toString(36).slice(2)+Date.now().toString(36);
       let dev=null;try{dev=JSON.parse(localStorage.getItem("qs-device")||"null")}catch(_){}if(!dev){dev=sid;try{localStorage.setItem("qs-device",JSON.stringify(dev))}catch(_){}}
       const ua=navigator.userAgent||"",os=/iPhone/.test(ua)?"iPhone":/iPad/.test(ua)?"iPad":/Android/.test(ua)?"Android":/Windows/.test(ua)?"Windows":/Mac OS X/.test(ua)?"Mac":"جهاز",br=/Edg\//.test(ua)?"Edge":/CriOS|Chrome\//.test(ua)?"Chrome":/FxiOS|Firefox\//.test(ua)?"Firefox":/Safari\//.test(ua)?"Safari":"";
-      await F.updateDoc(F.doc(db,"users",user.uid),{session:{id:sid,device:dev,ua:br?os+" · "+br:os,at:F.serverTimestamp()}});
+      try{await F.updateDoc(F.doc(db,"users",user.uid),{session:{id:sid,device:dev,ua:br?os+" · "+br:os,at:F.serverTimestamp()}});try{localStorage.setItem(key,JSON.stringify(sid))}catch(_){}}catch(se){console.warn("session claim failed",se);sid=null;try{localStorage.removeItem(key)}catch(_){}}
     } else if(cur.id!==sid){window.__kicked=true;await A.signOut(auth);return;}
     window.__freshLogin=false;
-    if(window.__sessUnsub)window.__sessUnsub();
-    window.__sessUnsub=F.onSnapshot(F.doc(db,"users",user.uid),s=>{const se=(s.data()||{}).session;if(se&&se.id!==sid){if(window.__sessUnsub){window.__sessUnsub();window.__sessUnsub=null;}window.__kicked=true;A.signOut(auth);}},()=>{});
+    if(window.__sessUnsub){window.__sessUnsub();window.__sessUnsub=null;}
+    if(sid)window.__sessUnsub=F.onSnapshot(F.doc(db,"users",user.uid),s=>{const se=(s.data()||{}).session;if(se&&se.id!==sid){if(window.__sessUnsub){window.__sessUnsub();window.__sessUnsub=null;}window.__kicked=true;A.signOut(auth);}},()=>{});
     const levels=(d.levels||[]).map(Number).filter(l=>l>=1&&l<=3).sort();
     window.MR.onUser({code:d.code,role:"student",kids:[{code:d.code,name:d.name||d.code}],levels:levels.length?levels:[1]});
   }catch(e){console.error(e);window.MR.onUser(null,e.code==="permission-denied"?"perm":"net");try{await A.signOut(auth)}catch(_){}}

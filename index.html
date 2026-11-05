@@ -1205,7 +1205,11 @@ function stopSessionWatch() { if (SESSION_UNSUB) { try { SESSION_UNSUB(); } catc
 async function startSession(u) {
   const key = "qs-session-" + u.uid; let sid = store.get(key, null);
   const cur = u.session || null;
-  if (FRESH_LOGIN || !sid || !cur) { sid = rid(); store.set(key, sid); await BE.claimSession(u.uid, { id: sid, device: DEVICE_ID, ua: deviceLabel() }); }
+  if (FRESH_LOGIN || !sid || !cur) {
+    sid = rid();
+    try { await BE.claimSession(u.uid, { id: sid, device: DEVICE_ID, ua: deviceLabel() }); store.set(key, sid); }
+    catch (e) { console.warn("session claim failed", e); try { localStorage.removeItem(key); } catch (_) { } FRESH_LOGIN = false; SESSION_ID = null; stopSessionWatch(); return true; }
+  }
   else if (cur.id !== sid) { return false; }
   FRESH_LOGIN = false; SESSION_ID = sid;
   stopSessionWatch();
