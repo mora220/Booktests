@@ -7646,17 +7646,30 @@ function subCSS() {
 .subcontacts .supnote{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line,#e1e5ee);border-radius:14px;padding:10px 14px;background:var(--raise,var(--panel,#f8f9fc))}.subcontacts .supnote small{color:var(--muted,#5d667b);font-size:12.5px}.subcontacts .supnote b{font-family:"Cairo",sans-serif}
 .subcontacts a span{direction:ltr;unicode-bidi:isolate;font-weight:800;color:#0e7a86;align-self:flex-start}
 @media (max-width:640px){.subhead{grid-template-columns:1fr}.subprice{justify-self:start}.subfeats,.subcontacts{grid-template-columns:1fr}.subbody,.subhead{padding:16px}}
+.paynow,.payor{display:none}
+html.payon .paynow{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;background:linear-gradient(120deg,#fff7ed,#ffedd5);border:1.5px solid #fdba74;border-radius:16px;padding:12px 14px}
+html.payon .payor{display:block;margin:0;font-weight:800;color:var(--muted,#5d667b)}
+.paybtn{display:inline-flex;align-items:center;gap:8px;background:#f97316;color:#fff!important;text-decoration:none;border-radius:999px;padding:11px 20px;font-weight:900;font-family:"Cairo",sans-serif;box-shadow:0 6px 18px rgba(249,115,22,.35)}
+.paym{display:flex;gap:6px;flex-wrap:wrap}.paym span{background:#fff;border:1px solid #fed7aa;border-radius:8px;padding:0 8px;font-weight:800;font-size:12.5px;color:#111827}
 .lockchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:999px;padding:0 9px;background:#fff1e6;color:#c2410c;line-height:1.9}
 `;
   document.head.appendChild(s);
 }
+const PAY_API = "https://api.mawhibax.com";
+function payCheck() {
+  const on = () => document.documentElement.classList.add("payon");
+  try { const c = sessionStorage.getItem("mx-payon"); if (c === "1") return on(); if (c === "0") return; } catch (e) { }
+  fetch(PAY_API + "/config", { cache: "no-store" }).then(r => r.json()).then(j => { const ok = !!(j && j.ok); try { sessionStorage.setItem("mx-payon", ok ? "1" : "0"); } catch (e) { } if (ok) on(); }).catch(() => { });
+}
 function subHTML(lang) {
-  subCSS();
+  subCSS(); if (!subHTML._pc) { subHTML._pc = 1; payCheck(); }
   const T = SUBTX[lang === "en" ? "en" : "ar"], L = lang === "en" ? "en" : "ar";
   const wa = `https://wa.me/${SUB.salesWa}?text=${encodeURIComponent(T.waText)}`;
   return `<section class="subcard" id="subscribe"><div class="subhead"><div><h2>${T.title}</h2><p>${T.lead}</p></div>
   <div class="subprice keepdig"><b>${SUB.price}</b><span>${T.price}</span><small>${T.vat}</small></div></div>
   <div class="subbody"><ul class="subfeats">${T.feats.map(f => `<li>${f}</li>`).join("")}</ul>
+  <div class="paynow"><a class="paybtn" href="pay.html">${L === "en" ? "Pay now and get your account instantly" : "ادفع الآن واحصل على حسابك فورًا"}</a><span class="paym"><span>Apple Pay</span><span>${L === "en" ? "mada" : "مدى"}</span><span>VISA</span><span>Mastercard</span></span></div>
+  <p class="payor">${L === "en" ? "Or pay by bank transfer:" : "أو اشترك بالتحويل البنكي:"}</p>
   <ol class="substeps"><li><div><b>${T.s1}</b><dl class="bankbox"><div><dt>${T.holder}</dt><dd>${SUB.holder[L]}</dd></div><div><dt>${T.bank}</dt><dd>${SUB.bank[L]}</dd></div>
     <div><dt>${T.iban}</dt><dd class="ibanv keepdig">${ibanPretty(SUB.iban)}</dd><button type="button" class="copybtn" data-copy="${SUB.iban}" data-done="${T.copied}">${T.copy}</button></div></dl></div></li>
   <li><div>${T.s2(`${SUB.salesName[L]} <b class="keepdig" dir="ltr">${SUB.salesPhone}</b>`)}<br><a class="wabtn" href="${wa}" target="_blank" rel="noopener">${WA_SVG}${T.waSales}</a></div></li>
