@@ -970,7 +970,7 @@ const SUB = {
   salesName: { ar: "شركة بوت للتسويق", en: "Bot Marketing Company" },
   salesPhone: "0597705599", salesWa: "966597705599",
   supName: { ar: "أ. محمد رجب", en: "Mr. Mohamed Ragab" },
-  supPhone: "0564826388", supWa: "966564826388"
+  supPhone: "", supWa: ""
 };
 const SUBTX = {
   ar: {
@@ -1022,6 +1022,7 @@ function subCSS() {
 .subcontacts a{display:flex;flex-direction:column;gap:2px;text-decoration:none;color:inherit;border:1px solid var(--line,#e1e5ee);border-radius:14px;padding:10px 14px;background:var(--raise,var(--panel,#f8f9fc))}
 .subcontacts a small{color:var(--muted,#5d667b);font-size:12.5px}
 .subcontacts a b{font-family:"Cairo",sans-serif}
+.subcontacts .supnote{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line,#e1e5ee);border-radius:14px;padding:10px 14px;background:var(--raise,var(--panel,#f8f9fc))}.subcontacts .supnote small{color:var(--muted,#5d667b);font-size:12.5px}.subcontacts .supnote b{font-family:"Cairo",sans-serif}
 .subcontacts a span{direction:ltr;unicode-bidi:isolate;font-weight:800;color:#0e7a86;align-self:flex-start}
 @media (max-width:640px){.subhead{grid-template-columns:1fr}.subprice{justify-self:start}.subfeats,.subcontacts{grid-template-columns:1fr}.subbody,.subhead{padding:16px}}
 .lockchip{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:999px;padding:0 9px;background:#fff1e6;color:#c2410c;line-height:1.9}
@@ -1040,7 +1041,7 @@ function subHTML(lang) {
   <li><div>${T.s2(`${SUB.salesName[L]} <b class="keepdig" dir="ltr">${SUB.salesPhone}</b>`)}<br><a class="wabtn" href="${wa}" target="_blank" rel="noopener">${WA_SVG}${T.waSales}</a></div></li>
   <li><div>${T.s3}</div></li></ol>
   <div class="subcontacts"><a href="https://wa.me/${SUB.salesWa}" target="_blank" rel="noopener"><small>${T.sales}</small><b>${SUB.salesName[L]}</b><span class="keepdig">${SUB.salesPhone}</span></a>
-  <a href="https://wa.me/${SUB.supWa}" target="_blank" rel="noopener"><small>${T.sup}</small><b>${SUB.supName[L]}</b><span class="keepdig">${SUB.supPhone}</span></a></div></div></section>`;
+  <div class="supnote"><small>${T.sup}</small><b>${SUB.supName[L]}</b></div></div></div></section>`;
 }
 function copyFallback(txt) { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length); try { document.execCommand("copy"); } catch (e) { } ta.remove(); }
 function copyText(txt) {
@@ -1198,7 +1199,7 @@ const TX = {
     colCode: "الكود", colName: "الاسم", colStatus: "الحالة", colLast: "آخر دخول والجهاز", endSess: "إنهاء الجلسة", endSessT: "تسجيل خروج الطالب من جهازه الحالي", sessEnded: "تم إنهاء جلسة الطالب على جهازه.", colAtt: "المحاولات", active: "مفعّل", stopped: "موقوف", results: "النتائج", password: "كلمة المرور", del: "حذف", showPw: "عرض", setPw: "تغيير", confirmDel: c => `حذف الطالب ${c} ونتائجه نهائياً؟`, yesDel: "نعم، احذف", cancel: "إلغاء",
     added: c => `تمت إضافة ${c}.`, updated: "تم الحفظ.", deleted: "تم الحذف.", pwChanged: "تم تغيير كلمة المرور.", search: "بحث بالاسم أو الكود أو جوال ولي الأمر", allStudents: "كل الطلاب", allLevels: "كل المستويات", noStudents: "لا يوجد طلاب بعد. أضف أول طالب من النموذج.", noResults: "لا توجد نتائج بعد.",
     studentFile: "ملف الطالب", progressBy: "أفضل نتيجة لكل فكرة", attempts: "المحاولات", back: "رجوع", useAsStudent: "تجربة المنصة", adminBadge: "مدير", newPwFor: c => `كلمة مرور جديدة لـ ${c}`, save: "حفظ", noLevel: "اختر مستوى واحداً على الأقل.",
-    footer: "المشرف الأكاديمي: أ. محمد رجب — جوال", langBtn: "English", adminName: "أ. محمد رجب",
+    footer: "المشرف الأكاديمي: أ. محمد رجب", langBtn: "English", adminName: "أ. محمد رجب",
   },
   en: {
     brand: "Mawhiba Express", tag: "Mawhiba test training with the Quick Solution method", lv: ["", "Level 1", "Level 2", "Level 3"], lvShort: ["", "1", "2", "3"],
@@ -1224,7 +1225,7 @@ const TX = {
     colCode: "Code", colName: "Name", colStatus: "Status", colLast: "Last seen & device", endSess: "End session", endSessT: "Sign the student out of their current device", sessEnded: "The student’s session was ended.", colAtt: "Attempts", active: "Active", stopped: "Paused", results: "Results", password: "Password", del: "Delete", showPw: "Show", setPw: "Change", confirmDel: c => `Permanently delete ${c} and their results?`, yesDel: "Yes, delete", cancel: "Cancel",
     added: c => `${c} added.`, updated: "Saved.", deleted: "Deleted.", pwChanged: "Password changed.", search: "Search by name, code or parent mobile", allStudents: "All students", allLevels: "All levels", noStudents: "No students yet. Add the first one with the form.", noResults: "No results yet.",
     studentFile: "Student file", progressBy: "Best score per idea", attempts: "Attempts", back: "Back", useAsStudent: "Try the platform", adminBadge: "Admin", newPwFor: c => `New password for ${c}`, save: "Save", noLevel: "Choose at least one level.",
-    footer: "Academic supervisor: Mr. Mohamed Ragab — Mobile", langBtn: "العربية", adminName: "Mr. Mohamed Ragab",
+    footer: "Academic supervisor: Mr. Mohamed Ragab", langBtn: "العربية", adminName: "Mr. Mohamed Ragab",
   }
 };
 let LANGUI = store.get("qs-lang", "ar");
@@ -1352,11 +1353,11 @@ function renderTop() {
   const lvs = allowedLevels();
   top.innerHTML = `<div class="brand">${LOGO}<div><b>${t("brand")}</b><small>${t("tag")}</small></div></div>
   ${lvs.length > 1 ? `<div class="levels" role="group">${lvs.map(l => `<button type="button" data-lv="${l}" aria-pressed="${l === LEVEL}"><span class="lvw">${LANGUI === "ar" ? "المستوى " : "Level "}</span>${t("lvShort")[l]}</button>`).join("")}</div>` : `<span class="lvone">${t("lv")[LEVEL]}</span>`}
-  <div class="contact"><button type="button" id="copyPhone" class="btn ghost"><span class="phone keepdig">0564826388</span></button><a class="btn wa" href="https://wa.me/966564826388" target="_blank" rel="noopener">${t("whats")}</a></div>
+  <div class="contact"><button type="button" id="copyPhone" class="btn ghost"><span class="phone keepdig">0597705599</span></button><a class="btn wa" href="https://wa.me/966597705599" target="_blank" rel="noopener">${t("whats")}</a></div>
   <div class="who"><span class="chip">${USER.role === "admin" ? `<b>${t("adminBadge")}</b> ` : ""}${esc(USER.role === "admin" ? t("adminName") : (USER.name || USER.code))}</span><button type="button" class="btn ghost" id="langBtn">${t("langBtn")}</button><button type="button" class="btn ghost" id="logoutBtn">${t("logout")}</button></div>`;
   $$("[data-lv]").forEach(b => b.onclick = () => setLevel(+b.dataset.lv));
   $("#langBtn").onclick = toggleLang; $("#logoutBtn").onclick = () => { stopTimer(); BE.logout(); };
-  $("#copyPhone").onclick = () => { const b = $("#copyPhone"), o = b.innerHTML; const done = () => { b.textContent = t("copied"); setTimeout(() => b.innerHTML = o, 1500); }; try { navigator.clipboard.writeText("0564826388").then(done, () => { }); } catch (e) { } };
+  $("#copyPhone").onclick = () => { const b = $("#copyPhone"), o = b.innerHTML; const done = () => { b.textContent = t("copied"); setTimeout(() => b.innerHTML = o, 1500); }; try { navigator.clipboard.writeText("0597705599").then(done, () => { }); } catch (e) { } };
   arabize(top);
 }
 function renderTabs() {
@@ -1372,7 +1373,7 @@ function toggleLang() {
   if (["exam", "practice", "result"].includes(VIEW)) VIEW = VIEW === "practice" ? "path" : "build";
   stopTimer(); renderTop(); renderFooter(); go(VIEW === "learn" ? "path" : VIEW);
 }
-function renderFooter() { const f = $("#foot"); f.innerHTML = `<div class="fcard"><div>${LOGO}<span><b>${t("brand")}</b><small>${t("tag").split("—")[0]}</small></span></div><div class="fl"><a class="fc" href="https://wa.me/966597705599" target="_blank" rel="noopener"><small>${t("salesC")}</small><b>${t("salesName")}</b><span class="phone keepdig">0597705599</span></a><a class="fc" href="https://wa.me/966564826388" target="_blank" rel="noopener"><small>${t("supervisor")}</small><b>${t("adminName")}</b><span class="phone keepdig">0564826388</span></a></div></div>`; }
+function renderFooter() { const f = $("#foot"); f.innerHTML = `<div class="fcard"><div>${LOGO}<span><b>${t("brand")}</b><small>${t("tag").split("—")[0]}</small></span></div><div class="fl"><a class="fc" href="https://wa.me/966597705599" target="_blank" rel="noopener"><small>${t("salesC")}</small><b>${t("salesName")}</b><span class="phone keepdig">0597705599</span></a><div class="fc"><small>${t("supervisor")}</small><b>${t("adminName")}</b></div></div></div>`; }
 function setLevel(l) {
   LEVEL = l; store.set("qs-level", l); document.documentElement.setAttribute("data-level", l);
   builder.sel = store.get("qs-sel-" + l, null) || defaultSel();
@@ -1400,7 +1401,7 @@ function renderLogin(err) {
   <div class="field"><label for="lpass">${t("pass")}</label><input id="lpass" type="password" autocomplete="current-password" dir="ltr" required></div>
   ${err ? `<p class="err" role="alert">${esc(err)}</p>` : ""}
   <button type="submit" class="btn pri big" id="lgo">${t("enter")}</button>
-  <p class="note">${t("footer")} <span class="phone keepdig">0564826388</span> — <a href="https://wa.me/966564826388" target="_blank" rel="noopener">${t("whats")}</a></p>${isGuest() ? `<button type="button" class="btn" id="backTrial">${t("backTrial")}</button>` : ""}</form></div>`;
+  <p class="note">${t("footer")}</p>${isGuest() ? `<button type="button" class="btn" id="backTrial">${t("backTrial")}</button>` : ""}</form></div>`;
   const bt = $("#backTrial"); if (bt) bt.onclick = () => go("path");
   $("#loginForm").onsubmit = async e => {
     e.preventDefault(); const c = $("#lcode").value, p = $("#lpass").value; const b = $("#lgo"); b.disabled = true; b.textContent = t("signing");
@@ -1688,7 +1689,7 @@ function reportHTML(stu, prog, atts) {
   <section class="rcard"><h3 class="warnc">${t("focus")}</h3>${weak.length ? `<ul class="rlist">${weak.map(item).join("")}</ul>` : `<p class="muted">${t("noneYet")}</p>`}${notStarted ? `<p class="note">${t("notStartedN", notStarted)}</p>` : ""}</section></div>
   <section class="rcard"><h3>${t("recent")}</h3>${attemptsTable(atts.slice(0, 10), false)}</section>
   <p class="rnote">${t("repNote")}</p>
-  <footer class="rfoot"><span>${t("footer")} <span class="phone keepdig">0564826388</span></span></footer>
+  <footer class="rfoot"><span>${t("footer")}</span></footer>
 </article>`;
   return h;
 }
