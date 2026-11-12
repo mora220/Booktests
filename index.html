@@ -355,6 +355,7 @@ body::before{background:var(--band)}
 .tabs button[aria-selected="true"]{background:var(--acc-soft);color:var(--acc-deep);border:0}
 .tablink{border-radius:11px}
 .tablink.xtra{margin-inline-start:6px;background:linear-gradient(120deg,#f97316,#f59e0b);color:#fff}
+.promo.fxp{border:2px solid #e0a01b;background:linear-gradient(120deg,#0f4c5c,#12355b);color:#fff}.promo.fxp:hover{background:linear-gradient(120deg,#12596b,#16406e)}.promo.fxp small{color:#d8e6ee}.promo.fxp .pico{background:rgba(255,255,255,.14);font-size:24px}
 .promo.xtra .pico{background:#fff1e6;color:#ea580c}
 .promo.xtra{border-color:color-mix(in srgb,#f97316 55%,var(--line))}
 /* hero */
@@ -1418,6 +1419,7 @@ function viewPath() {
     <div class="hstats">${bigRing(Math.round(100 * S.done / Math.max(1, S.n)), t("completion"))}
     <div class="mini"><div><b>${S.done}<small>/${S.n}</small></b><span>${t("doneIdeas")}</span></div><div><b>${pc(S.avg)}</b><span>${t("avgBest")}</span></div><div><b>${S.mastered}</b><span>${t("mastered")}</span></div></div></div></section>`;
   h += `<div class="doms">` + content().map(P => { const s = stats(P.ideas, progress); return `<a class="dom" href="#dom-${P.key}" style="--dc:${P.color}"><i></i><b>${P.title}</b><span>${t("ofIdeas", s.done, s.n)}${s.done ? ` · ${t("avgShort")} ${pc(s.avg)}` : ""}</span><span class="dbar"><i style="width:${Math.round(100 * s.done / s.n)}%"></i></span></a>`; }).join("") + `</div>`;
+  h += `<a class="promo fxp" href="exams.html?fx=1"><span class="pico">🎓</span><span><b>${LANGUI === "en" ? "Final simulated test" : "الاختبار المحاكي النهائي"}${isGuest() ? (LANGUI === "en" ? " · Subscribers" : " · للمشتركين") : ""}</b><small>${LANGUI === "en" ? "Same number of questions and time as the real scale, new questions every attempt, and a score certificate out of 2000" : "بعدد أسئلة ووقت المقياس الحقيقي، أسئلة جديدة في كل محاولة، وشهادة بالدرجة من 2000"}</small></span><span class="btn pri">${LANGUI === "en" ? "Start" : "ابدأ"}</span></a>`;
   if (!isGuest()) h += `<a class="promo xtra" href="extra.html"><span class="pico">${STARICON}</span><span><b>${t("tabExtra")}</b><small>${t("extraSub")}</small></span><span class="btn pri">${t("extraGo")}</span></a>`;
   h += `<a class="promo" href="exams.html"><span class="pico">${DOCICON}</span><span><b>${t("tabModels")}</b><small>${t("modelsSub")}</small></span><span class="btn pri">${t("modelsGo")}</span></a>`;
   for (const P of content()) {

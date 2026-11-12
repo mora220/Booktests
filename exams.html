@@ -14,7 +14,107 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="محاكاة مقياس موهبة - المستويات الأول والثاني والثالث - Mawhiba Test Practice - موهبة إكسبريس">
 <link rel="preconnect" href="https://www.gstatic.com" crossorigin>
-<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>body{margin:0}img{max-width:100%}[hidden]{display:none!important}/* ===== final simulated test (FX) ===== */
+.fxcard{display:flex;align-items:center;gap:18px;width:100%;text-align:start;padding:18px 22px;margin:14px 0;border-radius:18px;border:2px solid #e0a01b;background:linear-gradient(120deg,#0f4c5c,#12355b);color:#fff;cursor:pointer;font:inherit}
+.fxcard .ico{font-size:44px;flex:none}
+.fxcard b{font:700 20px var(--f-disp);color:#fff;display:block}
+.fxcard small{color:#d8e6ee;display:block;margin-top:4px;font-size:14px}
+.fxcard .fx-tagl{margin-inline-start:auto;flex:none;background:#e0a01b;color:#1d2b53;font:700 12.5px var(--f-disp);padding:5px 12px;border-radius:999px;white-space:nowrap}
+html.fx-on,html.fx-on body{overflow:hidden}
+#fx{position:fixed;inset:0;z-index:50;background:#e9edf2;color:#1b2a41;display:flex;flex-direction:column;font-family:var(--f-body);--fxc:#0f4c5c;--fxg:#c9a227}
+#fx *{box-sizing:border-box}
+#fx button{font-family:inherit;cursor:pointer}
+.fx-top{flex:none;background:var(--fxc);color:#fff;border-bottom:4px solid var(--fxg);display:flex;align-items:center;gap:14px;padding:8px 16px;padding-top:calc(8px + env(safe-area-inset-top,0px))}
+.fx-top .t{flex:1;min-width:0}
+.fx-top .t b{display:block;font:700 16px var(--f-disp);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-top .t small{display:block;color:#cfe1e6;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fx-clock{flex:none;background:#fff;color:#0f4c5c;border-radius:8px;padding:4px 12px;text-align:center;min-width:92px}
+.fx-clock small{display:block;font-size:10.5px;color:#55707a}
+.fx-clock b{font:700 20px "IBM Plex Mono",monospace;direction:ltr;display:block}
+.fx-clock.low{background:#fff1f0;color:#b42318;animation:fxBlink 1s steps(2) infinite}
+@keyframes fxBlink{50%{opacity:.6}}
+.fx-x{flex:none;border:1px solid rgba(255,255,255,.5);background:transparent;color:#fff;border-radius:8px;padding:8px 12px;font-size:13.5px}
+.fx-sub{flex:none;background:#fff;border-bottom:1px solid #cdd5df;display:flex;align-items:center;gap:12px;padding:8px 16px;font-size:14.5px}
+.fx-sub .sec{font-weight:700;color:var(--fxc)}
+.fx-sub .qn{margin-inline-start:auto;font-weight:700}
+.fx-bar{flex:none;height:5px;background:#d5dce5}.fx-bar i{display:block;height:100%;background:var(--fxg);transition:width .25s}
+.fx-body{flex:1 1 auto;overflow:auto;padding:16px 16px 96px}
+.fx-card{max-width:980px;margin:0 auto;background:#fff;border:1px solid #cdd5df;border-radius:6px;padding:22px 24px;box-shadow:0 1px 2px rgba(0,0,0,.05)}
+.fx-card h2{font:700 21px var(--f-disp);color:var(--fxc);margin:0 0 10px}
+.fx-card h3{font:700 16px var(--f-disp);margin:16px 0 6px}
+.fx-qh{display:flex;align-items:center;gap:10px;border-bottom:2px solid #e3e8ef;padding-bottom:10px;margin-bottom:14px}
+.fx-qh b{font:700 16px var(--f-disp);color:var(--fxc)}
+.fx-flag{margin-inline-start:auto;border:1px solid #b9c3d0;background:#fff;color:#44546a;border-radius:6px;padding:6px 12px;font-size:13.5px}
+.fx-flag[aria-pressed="true"]{background:#fff4d6;border-color:#c9a227;color:#7a5b00;font-weight:700}
+.fx-stem{font-size:18.5px;line-height:1.9;font-weight:500;color:#1b2a41}
+.fx-stem p{margin:0 0 8px}
+.fx-stem .passage{margin-bottom:12px;background:#f5f7fa;color:#1b2a41}
+.fx-stem .fig{margin-top:10px}
+.fx-opts{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.fx-opts.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.fx-opt{display:flex;align-items:center;gap:12px;width:100%;text-align:start;background:#fff;border:1px solid #b9c3d0;border-radius:6px;padding:10px 14px;font-size:17.5px;min-height:52px;color:#1b2a41}
+.fx-opt:hover{background:#f3f7fa}
+.fx-opt .r{flex:none;width:22px;height:22px;border-radius:50%;border:2px solid #6b7c93;display:grid;place-items:center}
+.fx-opt .L{flex:none;font:700 16px var(--f-disp);color:#44546a;min-width:18px}
+.fx-opt .c{min-width:0;flex:1}
+.fx-opt .c svg{display:block;height:74px;width:auto;max-width:100%}
+.fx-opt[aria-checked="true"]{border-color:var(--fxc);background:#e6f2f4;box-shadow:inset 0 0 0 1px var(--fxc)}
+.fx-opt[aria-checked="true"] .r{border-color:var(--fxc)}.fx-opt[aria-checked="true"] .r::after{content:"";width:12px;height:12px;border-radius:50%;background:var(--fxc)}
+.fx-opt.ok{border-color:#1f8a5a;background:#e7f6ee}.fx-opt.no{border-color:#c2453a;background:#fdecea}
+.fx-bot{flex:none;background:#fff;border-top:1px solid #cdd5df;display:flex;align-items:center;gap:8px;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));flex-wrap:wrap}
+.fx-b{border:1px solid var(--fxc);background:#fff;color:var(--fxc);border-radius:6px;padding:10px 18px;font:700 15px var(--f-disp)}
+.fx-b.pri{background:var(--fxc);color:#fff}
+.fx-b.gold{background:var(--fxg);border-color:var(--fxg);color:#1b2a41}
+.fx-b.red{border-color:#b42318;color:#b42318}
+.fx-b:disabled{opacity:.4;cursor:default}
+.fx-sp{flex:1}
+.fx-tbl{width:100%;border-collapse:collapse;margin:10px 0;font-size:15px}
+.fx-tbl th,.fx-tbl td{border:1px solid #cdd5df;padding:8px 10px;text-align:center}
+.fx-tbl th{background:#eef3f6;color:var(--fxc)}
+.fx-list{margin:6px 0;padding-inline-start:22px;line-height:2}
+.fx-note{background:#fff8e1;border:1px solid #ecd58a;border-radius:6px;padding:10px 14px;font-size:14.5px;margin:10px 0}
+.fx-in{width:100%;max-width:380px;border:1px solid #b9c3d0;border-radius:6px;padding:10px 12px;font:inherit}
+.fx-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(52px,1fr));gap:8px;margin:14px 0}
+.fx-grid button{position:relative;height:46px;border:1px solid #b9c3d0;background:#fff;border-radius:6px;font:700 15px var(--f-disp);color:#44546a}
+.fx-grid button.a{background:var(--fxc);border-color:var(--fxc);color:#fff}
+.fx-grid button.f::after{content:"⚑";position:absolute;top:-8px;inset-inline-end:-4px;color:#c9a227;font-size:17px}
+.fx-leg{display:flex;gap:16px;flex-wrap:wrap;font-size:13.5px;color:#44546a}
+.fx-leg i{display:inline-block;width:14px;height:14px;border-radius:3px;border:1px solid #b9c3d0;vertical-align:-2px;margin-inline-end:5px}
+.fx-modal{position:absolute;inset:0;z-index:5;background:rgba(15,30,45,.55);display:grid;place-items:center;padding:16px}
+.fx-modal>div{background:#fff;border-radius:8px;border-top:5px solid var(--fxc);padding:22px;max-width:440px;width:100%;text-align:center}
+.fx-modal b{display:block;font:700 18px var(--f-disp);margin-bottom:8px}
+.fx-modal p{margin:0 0 16px;color:#44546a}
+.fx-modal .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.fx-score{text-align:center;padding:8px 0 4px}
+.fx-score .big{font:800 clamp(46px,9vw,72px) var(--f-disp);color:var(--fxc);direction:ltr;line-height:1.1}
+.fx-score .big small{font-size:.38em;color:#6b7c93}
+.fx-grade{display:inline-block;margin:8px 0;padding:6px 22px;border-radius:999px;font:800 19px var(--f-disp);background:#e6f2f4;color:var(--fxc)}
+.fx-grade.g3{background:linear-gradient(90deg,#c9a227,#f1d56b);color:#3a2c00}.fx-grade.g2{background:#dcf2e6;color:#146c43}.fx-grade.g1{background:#eef1fb;color:#2b3a68}
+.fx-msg{font-size:17px;font-weight:600;margin:8px auto;max-width:640px;line-height:1.9}
+.fx-msg.pass{color:#146c43}.fx-msg.near{color:#8a5a00}
+.fx-meter{position:relative;height:16px;border-radius:999px;background:linear-gradient(90deg,#cfd8e3 0 55%,#bfe3cf 55% 80%,#f1d56b 80%);margin:26px auto 30px;max-width:620px}
+.fx-meter i{position:absolute;top:-7px;width:6px;height:30px;background:#1b2a41;border-radius:3px;transform:translateX(-50%)}
+.fx-meter span{position:absolute;top:20px;font-size:11.5px;color:#44546a;transform:translateX(-50%);white-space:nowrap}
+.fx-rev{border:1px solid #cdd5df;border-radius:6px;padding:12px 14px;margin:10px 0;background:#fff}
+.fx-rev .h{display:flex;gap:8px;align-items:center;font:700 14px var(--f-disp);margin-bottom:6px}
+.fx-rev .h .okb{color:#146c43}.fx-rev .h .nob{color:#b42318}.fx-rev .h .blb{color:#8a5a00}
+.fx-rev .ex{background:#f5f7fa;border-radius:6px;padding:8px 12px;margin-top:8px;font-size:15px}
+.fx-load{display:flex;align-items:center;gap:10px;color:#44546a;font-size:14.5px}
+.fx-load::before{content:"";width:16px;height:16px;border-radius:50%;border:3px solid #cdd5df;border-top-color:var(--fxc);animation:fxSpin .8s linear infinite}
+@keyframes fxSpin{to{transform:rotate(360deg)}}
+.cert .fxbig{font:800 46px var(--f-disp);direction:ltr;margin:6px 0;color:#1d2b53}
+.cert .fxbig small{font-size:.4em}
+.cert .fxgr{display:inline-block;padding:4px 20px;border-radius:999px;background:#e0a01b;color:#1d2b53;font:800 18px var(--f-disp);margin-bottom:6px}
+.cert .fxnote{font-size:11.5px;color:#55607a;margin-top:10px}
+@media (max-width:640px){
+  .fx-top{gap:8px;padding-inline:10px}.fx-top .t b{font-size:14px}.fx-clock{min-width:78px;padding:3px 8px}.fx-clock b{font-size:17px}
+  .fx-body{padding:10px 10px 96px}.fx-card{padding:16px 14px}.fx-stem{font-size:17px}.fx-opt{font-size:16px}
+  .fx-sub{font-size:13px;gap:8px;padding-inline:10px}.fx-sub .qn{white-space:nowrap}
+  .fx-bot{gap:6px;padding-inline:10px}.fx-b{padding:9px 12px;font-size:14px}
+  .fxcard{flex-wrap:wrap;gap:12px}.fxcard .fx-tagl{margin-inline-start:0}
+}
+html.fx-on #penWrap{bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+</style>
 <title>أسئلة شاملة وتجميعات · موهبة إكسبريس</title>
 <link rel="icon" type="image/png" href="data:image/png;base64,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">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4365,6 +4465,7 @@ function renderStart(){
     </div>
     <div class="facts">${T.levels[st.level].facts.map(f=>`<div class="fact"><b>${f[0]}</b><span>${f[1]}</span></div>`).join('')}</div>
     ${isGuestE()?guestBanner():''}
+    <button type="button" class="fxcard" id="fxGo"><span class="ico">🎓</span><span><b>${lang==='en'?'Final simulated test':'الاختبار المحاكي النهائي'}${isGuestE()?' · '+gt().lockS:''}</b><small>${lang==='en'?'Same number of questions and time as the real scale, new questions every attempt, and a score certificate out of 2000':'بعدد أسئلة ووقت المقياس الحقيقي، أسئلة جديدة في كل محاولة، وشهادة بالدرجة من 2000'}</small></span><span class="fx-tagl">${({1:'64 · 103',2:'96 · 120',3:'120 · 168'})[st.level]} ${lang==='en'?'min':'د'}</span></button>
     ${progBanner()}
     <div class="sheet" style="display:flex;flex-direction:column;gap:18px">
       ${st.user&&st.user.role!=='admin'&&st.user.role!=='guest'&&!nameEditable()?`<div class="field namebox who-box"><span class="muted">${T.studentLbl}</span><b>${esc(st.name)}</b>${st.user.kids.length>1?`<div class="kids"><span class="muted">${T.chooseKid}</span>${st.user.kids.map(k=>`<button type="button" data-kid="${esc(k.code)}" aria-pressed="${st.kid&&st.kid.code===k.code}">${esc(k.name||k.code)}</button>`).join('')}</div>`:''}</div>`
@@ -4374,6 +4475,8 @@ function renderStart(){
       <div class="row"><button class="btn gold" id="go">${T.start(mFull(st.model))}</button>${allowedLv().length>1?`<button class="btn line" id="chLv">${T.changeLevel}</button>`:''}${ORDERS[st.level].some(n=>done[n]!==undefined)?`<button class="btn line" id="certAll">${T.certAll}</button>`:''}</div>
     </div>
   </section>`;
+  {const fg=document.getElementById('fxGo');if(fg)fg.onclick=()=>window.FX.open();
+   if(!window.__fxAuto&&/[?&]fx=1/.test(location.search)&&st.user){window.__fxAuto=1;try{history.replaceState(null,'',location.pathname)}catch(e){};setTimeout(()=>window.FX.open(),120);}}
   const nmIn=document.getElementById('nm');
   const needName=()=>{if(!nmIn)return true;const v=nmIn.value.trim();if(v.length<2){nmIn.classList.add('bad');document.getElementById('nmErr').hidden=false;nmIn.focus();return false;}st.name=v;try{localStorage.setItem(nameEditable()?'mr_name_'+st.user.code:'mr_name',v)}catch(e){};return true;};
   if(nmIn)nmIn.oninput=()=>{nmIn.classList.remove('bad');document.getElementById('nmErr').hidden=true;};
@@ -4636,6 +4739,273 @@ function showCert(model){
 applyLang();
 if(st.screen==='lang')renderLang(); else if(st.screen==='level')renderLevel(); else renderBoot();
 </script>
+<script>
+/* ================= الاختبار المحاكي النهائي (FX) ================= */
+window.FX=(function(){
+  const EN=()=>lang==='en', X=(a,e)=>EN()?e:a;
+  const CFG={1:{n:64,min:103},2:{n:96,min:120},3:{n:120,min:168}};
+  const PASS=1550, TOP=1800, FULL=2000;
+  const ASP=['V','M','S','F'];
+  const ASPN={V:['الاستدلال اللغوي وفهم المقروء','Verbal reasoning & reading'],M:['الاستدلال الرياضي والمكاني','Mathematical & spatial reasoning'],S:['الاستدلال العلمي والميكانيكي','Scientific & mechanical reasoning'],F:['المرونة العقلية','Mental flexibility']};
+  const an=a=>X(ASPN[a][0],ASPN[a][1]);
+  const sn=i=>X(['القسم الأول','القسم الثاني','القسم الثالث','القسم الرابع'][i],['Section one','Section two','Section three','Section four'][i]);
+  const aspOf=q=>['V','M','S','F'][q.d]||'M';
+  const who=()=>String(st.kid?st.kid.code:(st.user?st.user.code:'guest'));
+  const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+  const shuf=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+  const mmss=s=>{s=Math.max(0,Math.round(s));const h=Math.floor(s/3600),m=Math.floor(s%3600/60),x=s%60;return (h?h+':':'')+String(m).padStart(2,'0')+':'+String(x).padStart(2,'0');};
+
+  /* ---------- bank: every question on the site for the level ---------- */
+  let BANK=null,bankP=null,extraOK=false;
+  async function loadExtra(){
+    try{
+      const r=await fetch('extra.html');if(!r.ok)throw new Error('http '+r.status);
+      const tx=await r.text(),m0=tx.indexOf('// ================= figure helpers'),a=tx.lastIndexOf('<script>',m0),b=tx.indexOf('\nconst Q=[]',a);if(m0<0||a<0||b<0)throw new Error('format');
+      const o=new Function(tx.slice(a+8,b)+'\n;return {B:B,BE:BE,MODELS:MODELS,LEVELS:LEVELS,enFig:enFig};')();
+      const mine=new Set(MODELS.map(m=>m.p)),out=[];let id=0;
+      o.MODELS.forEach(m=>{const lv=+Object.keys(o.LEVELS).find(l=>o.LEVELS[l].parts.includes(m.p))||0;
+        (o.B[m.n]||[]).forEach((r,i)=>{const ex=r[4]||{},e=(o.BE[m.n]||[])[i]||[],ee=e[4]||{},qid=m.n+'_'+i,h=(id++),rr=(((h*2654435761)>>>0)>>>7)%4,order=[0,1,2,3].map(k=>(k+rr)%4);
+          if(!lv||mine.has(m.p)||!r[2]||r[2].length!==4)return;
+          out.push({key:'x'+qid,lv,q:{p:m.p,d:r.__d,figOpts:!!ex.figOpts,html:!!ex.html,ar:{skill:r[0],q:r[1],o:r[2],e:r[3],fig:ex.fig,pass:ex.pass},en:{skill:e[0]||r[0],q:e[1]||r[1],o:e[2]||r[2],e:e[3]||r[3],fig:ee.fig||o.enFig(ex.fig),pass:ee.pass||ex.pass},order,ans:order.indexOf(0)}});});});
+      extraOK=true;return out;
+    }catch(e){console.warn('FX: extra bank not loaded',e);return [];}
+  }
+  function loadBank(){
+    if(bankP)return bankP;
+    bankP=loadExtra().then(xs=>{
+      const all=Q.filter(q=>L_(q,'ar').o&&L_(q,'ar').o.length===4).map(q=>({key:'i'+q.id,lv:levelOf(q.m),q})).concat(xs);
+      all.forEach(it=>it.asp=aspOf(it.q));
+      BANK={all,by:Object.fromEntries(all.map(it=>[it.key,it]))};return BANK;});
+    return bankP;
+  }
+  const L_=(q,l)=>q[l||lang||'ar'];
+  const pool=lv=>BANK.all.filter(it=>it.lv===lv);
+
+  /* ---------- no repeats until the whole bank is done ---------- */
+  const seenKey=lv=>`mr_fx_seen_${who()}_${lv}`;
+  async function cloudSeen(lv){
+    if(!st.kid||!st.user||st.user.role==='admin'||!window.RG||!window.RG.exResults)return;
+    try{const rs=await Promise.race([window.RG.exResults(String(st.kid.code)),new Promise((_,j)=>setTimeout(()=>j(new Error('slow')),6000))]);
+      const s=new Set(LS.get(seenKey(lv),[]));let best=0,n=0;
+      rs.forEach(r=>{if(r&&r.fx&&r.level===lv){n++;best=Math.max(best,r.score||0);(r.fxKeys||[]).forEach(k=>s.add(k));}});
+      LS.set(seenKey(lv),[...s]);const h=LS.get(histKey(lv),{n:0,best:0});LS.set(histKey(lv),{n:Math.max(h.n,n),best:Math.max(h.best,best)});
+    }catch(e){console.warn('FX seen',e);}
+  }
+  const histKey=lv=>`mr_fx_hist_${who()}_${lv}`;
+  function pickQs(lv){
+    const per=CFG[lv].n/4;let seen=new Set(LS.get(seenKey(lv),[]));const P=pool(lv),secs=[0,1,2,3].map(()=>({keys:[]}));
+    ASP.forEach((a,ai)=>{
+      const all=P.filter(it=>it.asp===a);let fresh=shuf(all.filter(it=>!seen.has(it.key))),take=fresh.slice(0,per);
+      if(take.length<per){all.forEach(it=>seen.delete(it.key));const got=new Set(take.map(it=>it.key));take=take.concat(shuf(all.filter(it=>!got.has(it.key))).slice(0,per-take.length));}
+      take.forEach(it=>seen.add(it.key));
+      /* spread this aspect evenly over the four sections (extra ones rotate so every section has the same size) */
+      const base=Math.floor(take.length/4),extra=take.length-base*4;let p=0;
+      for(let k=0;k<4;k++){const si=(ai+k)%4,n=base+(k<extra?1:0);take.slice(p,p+n).forEach(it=>secs[si].keys.push(it.key));p+=n;}
+    });
+    secs.forEach(s=>s.keys=shuf(s.keys));
+    LS.set(seenKey(lv),[...seen]);return secs;
+  }
+
+  /* ---------- state ---------- */
+  let F=null,tm=null,el=null;
+  const progKey=()=>`mr_fx_prog_${who()}`;
+  const saveProg=()=>{if(F&&F.phase==='run')LS.set(progKey(),{lv:F.lv,secs:F.secs,sec:F.sec,cur:F.cur,ans:F.ans,flag:F.flag,left:F.left,used:F.used,secT:F.secT,ts:Date.now(),name:F.name});};
+  const item=k=>BANK.by[k];
+  const $=s=>el.querySelector(s);
+  function mount(){
+    if(el)return;el=document.createElement('div');el.id='fx';document.body.appendChild(el);document.documentElement.classList.add('fx-on');
+    el.addEventListener('click',e=>{const b=e.target.closest('[data-fx]');if(b&&ACT[b.dataset.fx])ACT[b.dataset.fx](b);});
+  }
+  function close(){clearInterval(tm);tm=null;if(el){el.remove();el=null;}F=null;document.documentElement.classList.remove('fx-on');wipePen();}
+  function modal(title,body,btns){const m=document.createElement('div');m.className='fx-modal';m.innerHTML=`<div><b>${title}</b><p>${body}</p><div class="row">${btns.map((b,i)=>`<button type="button" class="fx-b ${b[1]||''}" data-i="${i}">${b[0]}</button>`).join('')}</div></div>`;el.appendChild(m);m.querySelectorAll('[data-i]').forEach(x=>x.onclick=()=>{m.remove();const f=btns[+x.dataset.i][2];if(f)f();});}
+  const wipePen=()=>{try{Pen.update()}catch(e){}};
+  const top=(sub,clock)=>`<div class="fx-top"><div class="t"><b>${X('الاختبار المحاكي النهائي · مقياس موهبة','Final simulated test · Mawhiba scale')}</b><small>${sub}</small></div>${clock||''}<button type="button" class="fx-x" data-fx="exit">${X('خروج','Exit')}</button></div>`;
+  const lvName=lv=>t().levels[lv].short;
+
+  /* ---------- intro ---------- */
+  function open(){
+    const lv=st.level;if(!CFG[lv])return;mount();
+    F={phase:'intro',lv,name:st.name||''};
+    el.innerHTML=top(lvName(lv))+`<div class="fx-body"><div class="fx-card"><div class="fx-load">${X('جارٍ تجهيز بنك الأسئلة…','Preparing the question bank…')}</div></div></div>`;
+    Promise.all([loadBank(),cloudSeen(lv)]).then(()=>{if(F&&F.phase==='intro')intro();});
+  }
+  function intro(){
+    const lv=F.lv,c=CFG[lv],per=c.n/4,secMin=c.min/4,P=pool(lv),seen=new Set(LS.get(seenKey(lv),[])),done_=P.filter(it=>seen.has(it.key)).length,h=LS.get(histKey(lv),{n:0,best:0});
+    const pr=LS.get(progKey(),null),canRes=pr&&pr.lv===lv&&Date.now()-pr.ts<12*3600*1000&&pr.secs.every(s=>s.keys.every(k=>BANK.by[k]));
+    const short=ASP.some(a=>P.filter(it=>it.asp===a).length<per);
+    el.innerHTML=top(lvName(lv))+`<div class="fx-body"><div class="fx-card">
+      <h2>${X('تعليمات الاختبار','Test instructions')}</h2>
+      <table class="fx-tbl"><tr><th>${X('المستوى','Level')}</th><th>${X('عدد الأسئلة','Questions')}</th><th>${X('مدة الاختبار','Duration')}</th><th>${X('الدرجة النهائية','Full mark')}</th></tr>
+      <tr><td>${lvName(lv)}</td><td>${c.n}</td><td>${c.min} ${X('دقيقة','min')}</td><td>${FULL}</td></tr></table>
+      <h3>${X('أقسام الاختبار','Sections')}</h3>
+      <table class="fx-tbl"><tr><th>#</th><th>${X('القسم','Section')}</th><th>${X('الأسئلة','Questions')}</th><th>${X('الزمن','Time')}</th></tr>
+      ${ASP.map((a,i)=>`<tr><td>${i+1}</td><td>${sn(i)}</td><td>${per}</td><td dir="ltr">${mmss(secMin*60)}</td></tr>`).join('')}</table>
+      <p>${X('كل قسم منوّع ويضم أسئلة من الجوانب الأربعة','Every section is mixed and has questions from the four aspects')}: ${ASP.map(an).join(X(' ، ',', '))}.</p>
+      <ul class="fx-list">
+        <li>${X('لكل قسم زمنه الخاص، وعند انتهاء الزمن ينتقل الاختبار تلقائيًا للقسم التالي.','Each section has its own time; when it ends the test moves to the next section automatically.')}</li>
+        <li>${X('داخل القسم يمكنك التنقل بين الأسئلة وتمييز أي سؤال للمراجعة، ولا يمكن الرجوع لقسم بعد إنهائه.','Inside a section you can move between questions and flag any for review; you cannot return to a finished section.')}</li>
+        <li>${X('لا يوجد خصم على الإجابة الخاطئة، فلا تترك سؤالًا بلا إجابة.','There is no penalty for wrong answers, so do not leave a question blank.')}</li>
+        <li>${X('القلم متاح طوال الاختبار للحل، وتُمسح الكتابة عند الانتقال لسؤال آخر.','The pen is available throughout; your writing is cleared when you move to another question.')}</li>
+        <li>${X('الأسئلة تتغير في كل محاولة حتى تحل كل أسئلة المستوى.','Questions change every attempt until you have solved all the questions of the level.')}</li>
+      </ul>
+      <div class="fx-note">${X(`حللت حتى الآن <b>${done_}</b> من <b>${P.length}</b> سؤالًا في بنك هذا المستوى`,`So far you have solved <b>${done_}</b> of <b>${P.length}</b> questions in this level's bank`)}${h.n?X(` · عدد محاولاتك: <b>${h.n}</b> · أفضل درجة: <b>${h.best}</b>`,` · attempts: <b>${h.n}</b> · best score: <b>${h.best}</b>`):''}.${extraOK?'':X('<br>تنبيه: تعذّر تحميل أسئلة «تجميعات اكسترا» الآن، فسيُسحب الاختبار من «الشاملة والتجميعات» فقط.','<br>Note: the “Compilations Extra” questions could not be loaded now, so this test draws from the full models and compilations only.')}</div>
+      ${typeof isGuestE==='function'&&isGuestE()?`<div class="fx-note"><b>${X('الاختبار المحاكي النهائي متاح للمشتركين.','The final simulated test is for subscribers.')}</b> ${X('اضغط «ابدأ الاختبار» لمعرفة طريقة الاشتراك.','Press “Start the test” to see how to subscribe.')}</div>`:''}
+      ${st.name||(typeof isGuestE==='function'&&isGuestE())?`<p>${X('المتقدم','Candidate')}: <b>${esc(st.name||X('زائر','Guest'))}</b></p>`:`<p><label>${X('اسم الطالب (يظهر في الشهادة)','Student name (shown on the certificate)')}<br><input class="fx-in" id="fxName" maxlength="60"></label></p>`}
+      ${short?`<div class="fx-note">${X('عدد الأسئلة المتاحة في أحد الأقسام أقل من المطلوب.','One section has fewer questions than required.')}</div>`:''}
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        ${canRes?`<button type="button" class="fx-b gold" data-fx="resume">${X('متابعة الاختبار غير المكتمل','Resume the unfinished test')}</button>`:''}
+        <button type="button" class="fx-b pri" data-fx="start">${canRes?X('بدء اختبار جديد','Start a new test'):X('ابدأ الاختبار','Start the test')}</button>
+        <button type="button" class="fx-b" data-fx="exit">${X('رجوع','Back')}</button></div>
+    </div></div>`;
+  }
+  function needName(){const i=$('#fxName');if(!i)return true;const v=i.value.trim();if(v.length<2){i.focus();i.style.borderColor='#b42318';return false;}F.name=v;return true;}
+  const guestStop=()=>{if(typeof isGuestE==='function'&&isGuestE()){close();showSub();return true;}return false;};
+  function start(){
+    if(guestStop())return;if(!needName())return;const lv=F.lv;
+    Object.assign(F,{phase:'run',secs:pickQs(lv),sec:0,cur:0,ans:{},flag:{},used:0,secT:Math.round(CFG[lv].min*60/4)});F.left=F.secT;
+    secGate();
+  }
+  function resume(){
+    if(guestStop())return;if(!needName())return;const p=LS.get(progKey(),null);if(!p)return intro();
+    Object.assign(F,{phase:'run',secs:p.secs,sec:p.sec,cur:p.cur,ans:p.ans||{},flag:p.flag||{},left:p.left,used:p.used||0,secT:p.secT});if(p.name&&!F.name)F.name=p.name;
+    run();
+  }
+  /* ---------- section gate ---------- */
+  function secGate(){
+    clearInterval(tm);tm=null;setTimeout(wipePen,0);const s=F.secs[F.sec];saveProg();
+    el.innerHTML=top(`${lvName(F.lv)} · ${esc(F.name)}`)+`<div class="fx-body"><div class="fx-card" style="text-align:center">
+      <h2>${sn(F.sec)}</h2><p style="font:700 17px var(--f-disp);margin:6px 0;color:#55607a">${X(`القسم ${F.sec+1} من 4 · أسئلة منوّعة من الجوانب الأربعة`,`Section ${F.sec+1} of 4 · mixed questions from the four aspects`)}</p>
+      <p>${X(`عدد الأسئلة: <b>${s.keys.length}</b> · الزمن: <b dir="ltr">${mmss(F.left)}</b>`,`Questions: <b>${s.keys.length}</b> · Time: <b dir="ltr">${mmss(F.left)}</b>`)}</p>
+      <p style="color:#55607a">${X('يبدأ حساب الوقت عند الضغط على «ابدأ القسم».','The clock starts when you press “Start section”.')}</p>
+      <button type="button" class="fx-b pri" data-fx="run">${X('ابدأ القسم','Start section')}</button></div></div>`;
+  }
+  function run(){clearInterval(tm);tm=setInterval(tick,1000);F.view='q';draw();wipePen();}
+  function tick(){
+    if(!F||F.phase!=='run')return;F.left--;F.used++;
+    const c=$('#fxClock');if(c){c.querySelector('b').textContent=mmss(F.left);c.classList.toggle('low',F.left<=120);}
+    if(F.used%5===0)saveProg();
+    if(F.left<=0){clearInterval(tm);const m=el.querySelector('.fx-modal');if(m)m.remove();modal(X('انتهى زمن القسم','Section time is over'),X('سيتم الانتقال الآن.','Moving on now.'),[[X('متابعة','Continue'),'pri',endSec]]);}
+  }
+  const clock=()=>`<div class="fx-clock ${F.left<=120?'low':''}" id="fxClock"><small>${X('الوقت المتبقي للقسم','Section time left')}</small><b>${mmss(F.left)}</b></div>`;
+  function draw(){
+    const s=F.secs[F.sec],n=s.keys.length;
+    if(F.view==='rev')return drawRev();
+    const key=s.keys[F.cur],q=item(key).q,Lq=L_(q),a=F.ans[key];
+    el.innerHTML=top(`${lvName(F.lv)} · ${esc(F.name)}`,clock())+
+      `<div class="fx-sub"><span class="sec">${X(`القسم ${F.sec+1} من 4`,`Section ${F.sec+1} of 4`)}</span><span class="qn">${X(`السؤال ${F.cur+1} من ${n}`,`Question ${F.cur+1} of ${n}`)}</span></div>
+      <div class="fx-bar"><i style="width:${(F.cur+1)/n*100}%"></i></div>
+      <div class="fx-body" id="fxBody"><div class="fx-card">
+        <div class="fx-qh"><b>${X('السؤال','Question')} ${F.cur+1}</b><button type="button" class="fx-flag" data-fx="flag" aria-pressed="${!!F.flag[key]}">⚑ ${F.flag[key]?X('مميّز للمراجعة','Flagged for review'):X('تمييز للمراجعة','Flag for review')}</button></div>
+        <div class="fx-stem">${Lq.pass?`<div class="passage"><b>${t().readLbl}</b>${Lq.pass}</div>`:''}<p>${q.html?Lq.q:esc(Lq.q)}</p>${Lq.fig?`<div class="fig">${Lq.fig}</div>`:''}${typeof trBoxHTML==='function'?trBoxHTML(q,key):''}</div>
+        <div class="fx-opts ${q.figOpts?'grid':''}" role="radiogroup">${q.order.map((k,pos)=>`<button type="button" class="fx-opt" role="radio" data-fx="pick" data-p="${pos}" aria-checked="${a===pos}"><span class="r"></span><span class="L">${t().let[pos]}</span><span class="c">${q.figOpts?Lq.o[k]:esc(Lq.o[k])}</span></button>`).join('')}</div>
+      </div></div>
+      <div class="fx-bot"><button type="button" class="fx-b" data-fx="prev" ${F.cur===0?'disabled':''}>${X('السابق','Previous')}</button><button type="button" class="fx-b pri" data-fx="next">${F.cur<n-1?X('التالي','Next'):X('مراجعة القسم','Review section')}</button><span class="fx-sp"></span><button type="button" class="fx-b" data-fx="rev">${X('مراجعة','Review')}</button><button type="button" class="fx-b red" data-fx="endAsk">${F.sec<3?X('إنهاء القسم','End section'):X('إنهاء الاختبار','End test')}</button></div>`;
+  }
+  function drawRev(){
+    const s=F.secs[F.sec],n=s.keys.length,ansd=s.keys.filter(k=>F.ans[k]!==undefined).length,fl=s.keys.filter(k=>F.flag[k]).length;
+    el.innerHTML=top(`${lvName(F.lv)} · ${esc(F.name)}`,clock())+
+      `<div class="fx-sub"><span class="sec">${X(`القسم ${F.sec+1} من 4`,`Section ${F.sec+1} of 4`)}</span><span class="qn">${X('شاشة المراجعة','Review screen')}</span></div>
+      <div class="fx-body"><div class="fx-card"><h2>${X('مراجعة القسم','Section review')}</h2>
+        <p>${X(`أجبت عن <b>${ansd}</b> من <b>${n}</b> · غير مجاب: <b>${n-ansd}</b> · مميّز: <b>${fl}</b>`,`Answered <b>${ansd}</b> of <b>${n}</b> · unanswered: <b>${n-ansd}</b> · flagged: <b>${fl}</b>`)}</p>
+        <div class="fx-grid">${s.keys.map((k,i)=>`<button type="button" data-fx="jump" data-i="${i}" class="${F.ans[k]!==undefined?'a':''} ${F.flag[k]?'f':''}">${i+1}</button>`).join('')}</div>
+        <div class="fx-leg"><span><i style="background:#0f4c5c"></i>${X('مجاب','Answered')}</span><span><i></i>${X('غير مجاب','Unanswered')}</span><span>⚑ ${X('مميّز للمراجعة','Flagged')}</span></div>
+      </div></div>
+      <div class="fx-bot"><button type="button" class="fx-b" data-fx="back">${X('العودة للأسئلة','Back to questions')}</button><span class="fx-sp"></span><button type="button" class="fx-b red" data-fx="endAsk">${F.sec<3?X('إنهاء القسم','End section'):X('إنهاء الاختبار','End test')}</button></div>`;
+  }
+  function go(i){F.cur=i;F.view='q';draw();wipePen();saveProg();}
+  function endSec(){
+    wipePen();
+    if(F.sec<3){F.sec++;F.cur=0;F.left=F.secT;F.view='q';secGate();}else finish();
+  }
+  const ACT={
+    exit(){if(F&&F.phase==='run'){modal(X('الخروج من الاختبار؟','Leave the test?'),X('سيُحفظ تقدمك على هذا الجهاز ويمكنك المتابعة لاحقًا من نفس المكان.','Your progress is kept on this device and you can resume later.'),[[X('خروج','Leave'),'red',()=>{saveProg();close();}],[X('متابعة الاختبار','Keep going'),'pri']]);}else close();},
+    start(){start();},resume(){resume();},run(){run();},
+    pick(b){const k=F.secs[F.sec].keys[F.cur],p=+b.dataset.p;F.ans[k]=p;el.querySelectorAll('.fx-opt').forEach(o=>o.setAttribute('aria-checked',+o.dataset.p===p));saveProg();},
+    flag(){const k=F.secs[F.sec].keys[F.cur];F.flag[k]=!F.flag[k];draw();},
+    prev(){if(F.cur>0)go(F.cur-1);},
+    next(){const n=F.secs[F.sec].keys.length;if(F.cur<n-1)go(F.cur+1);else{F.view='rev';draw();wipePen();}},
+    rev(){F.view='rev';draw();wipePen();},back(){F.view='q';draw();wipePen();},jump(b){go(+b.dataset.i);},
+    endAsk(){const s=F.secs[F.sec],bl=s.keys.filter(k=>F.ans[k]===undefined).length;
+      modal(F.sec<3?X('إنهاء القسم؟','End this section?'):X('إنهاء الاختبار؟','End the test?'),(bl?X(`لديك <b>${bl}</b> سؤال بلا إجابة. `,`You have <b>${bl}</b> unanswered question(s). `):'')+X('لن تستطيع الرجوع لهذا القسم بعد إنهائه.','You cannot return to this section afterwards.'),[[X('نعم، إنهاء','Yes, end'),'red',()=>{clearInterval(tm);endSec();}],[X('رجوع','Go back'),'pri']]);},
+    print(){let pc=document.getElementById('printcert');if(!pc){pc=document.createElement('div');pc.id='printcert';document.body.appendChild(pc);}pc.dir=t().dir;pc.innerHTML=cert();try{window.print()}catch(e){}},
+    answers(){drawAnswers();},result(){drawResult();},again(){open();},home(){close();}
+  };
+
+  /* ---------- scoring: 1000–2000 on the Mawhiba-style scale ---------- */
+  /* overall % -> scale: 0%=1000, 68%=1550 (gifted), 80%=1800 (exceptional), 100%=2000 */
+  const PTS=[[0,0],[.68,.55],[.8,.8],[1,1]];
+  const curve=p=>{for(let i=1;i<PTS.length;i++){if(p<=PTS[i][0]){const [x0,y0]=PTS[i-1],[x1,y1]=PTS[i];return y0+(y1-y0)*(p-x0)/(x1-x0);}}return 1;};
+  function score(){
+    const R={asp:{},right:0,blank:0,total:0};ASP.forEach(a=>R.asp[a]={c:0,n:0,sc:250});
+    F.secs.forEach(s=>s.keys.forEach(k=>{const it=item(k),a=F.ans[k],o=R.asp[it.asp];o.n++;R.total++;if(a===undefined)R.blank++;else if(a===it.q.ans){o.c++;R.right++;}}));
+    R.score=Math.round(1000+1000*curve(R.total?R.right/R.total:0));
+    /* share the total over the four aspects (250–500 each) in proportion to each aspect's own curve */
+    const ex=ASP.map(a=>{const o=R.asp[a];return 250*curve(o.n?o.c/o.n:0);}),sum=ex.reduce((x,y)=>x+y,0),k=sum?(R.score-1000)/sum:0;
+    ASP.forEach((a,i)=>R.asp[a].sc=Math.min(500,Math.round(250+ex[i]*k)));
+    let diff=R.score-ASP.reduce((x,a)=>x+R.asp[a].sc,0),g=0;
+    while(diff!==0&&g++<400){const d=diff>0?1:-1,c=ASP.filter(a=>d>0?R.asp[a].sc<500:R.asp[a].sc>250);if(!c.length)break;R.asp[c[g%c.length]].sc+=d;diff-=d;}
+    R.wrong=R.total-R.right-R.blank;R.pct=R.total?Math.round(R.right/R.total*100):0;
+    R.g=R.score>=TOP?3:R.score>=PASS?2:1;R.grade=R.g===3?X('موهبة استثنائية','Exceptionally gifted'):R.g===2?X('موهوب','Gifted'):X('واعد بالموهبة','Promising talent');
+    R.gradeAr=R.g===3?'موهبة استثنائية':R.g===2?'موهوب':'واعد بالموهبة';
+    return R;
+  }
+  function finish(){
+    clearInterval(tm);tm=null;F.phase='done';setTimeout(wipePen,0);LS.del(progKey());const R=F.R=score(),lv=F.lv;F.ts=Date.now();
+    const h=LS.get(histKey(lv),{n:0,best:0});LS.set(histKey(lv),{n:h.n+1,best:Math.max(h.best,R.score)});
+    F.sync='';
+    if(st.user&&st.user.role!=='admin'&&st.kid&&window.RG&&window.RG.saveResult){
+      const keys=F.secs.flatMap(s=>s.keys);F.sync='saving';
+      const data={studentCode:String(st.kid.code),studentName:F.name||st.kid.name||'',nameEdited:false,byCode:String(st.user.code),role:st.user.role,level:lv,model:9000+lv,hasAnswers:false,lang:lang||'ar',
+        modelName:'الاختبار المحاكي النهائي',partName:`الدرجة ${R.score} من ${FULL} · ${R.gradeAr}`,levelName:I18N.ar.levels[lv].short,
+        percent:R.pct,right:R.right,wrong:R.wrong,blank:R.blank,total:R.total,usedSec:F.used,totalSec:CFG[lv].min*60,timestamp:F.ts,
+        fx:true,score:R.score,grade:R.gradeAr,aspects:Object.fromEntries(ASP.map(a=>[a,R.asp[a]])),fxKeys:keys,fxPicks:keys.map(k=>F.ans[k]===undefined?-1:F.ans[k])};
+      Promise.resolve().then(()=>window.RG.saveResult(JSON.parse(JSON.stringify(data)))).then(()=>{F.sync='ok';syncNote();}).catch(e=>{console.warn('FX save',e);F.sync='fail';syncNote();});
+    }
+    drawResult();
+  }
+  function syncNote(){const n=el&&$('#fxSync');if(!n||!F)return;n.textContent=F.sync==='saving'?X('جارٍ حفظ النتيجة…','Saving the result…'):F.sync==='ok'?X('✓ تم حفظ النتيجة في حسابك.','✓ Result saved to your account.'):F.sync==='fail'?X('تعذّر حفظ النتيجة في حسابك الآن. احتفظ بالشهادة من زر الطباعة.','Could not save the result to your account now. Keep the certificate using the print button.'):'';}
+  const msg=R=>R.score>=PASS?X(`🎉 لقد اجتزت درجة القبول لفصول موهبة حسب العام الماضي (${PASS}).`,`🎉 You passed last year's admission score for Mawhiba classes (${PASS}).`):X(`لقد اقتربت من أن تكون موهوبًا! ينقصك ${PASS-R.score} درجة فقط عن درجة القبول لفصول موهبة حسب العام الماضي (${PASS}). واصل التدريب وأعد المحاولة.`,`You are close to being gifted! You are only ${PASS-R.score} points below last year's admission score for Mawhiba classes (${PASS}). Keep practising and try again.`);
+  const aspTable=R=>`<table class="fx-tbl"><tr><th>${X('الجانب','Aspect')}</th><th>${X('الإجابات الصحيحة','Correct')}</th><th>${X('الدرجة','Score')}</th></tr>${ASP.map(a=>`<tr><td>${an(a)}</td><td dir="ltr">${R.asp[a].c} / ${R.asp[a].n}</td><td dir="ltr">${R.asp[a].sc} / 500</td></tr>`).join('')}<tr><th>${X('المجموع','Total')}</th><th dir="ltr">${R.right} / ${R.total}</th><th dir="ltr">${R.score} / ${FULL}</th></tr></table>`;
+  function cert(){
+    const R=F.R,T=t();let date='';try{date=new Date(F.ts).toLocaleDateString(T.dateLoc,{year:'numeric',month:'long',day:'numeric'})}catch(e){date=new Date(F.ts).toISOString().slice(0,10)}
+    return `<div class="cert" dir="${T.dir}"><div class="medal">${EN()?'M':'م'}</div>
+      <div class="sub">${X('الاختبار المحاكي النهائي لمقياس موهبة','Final simulated test · Mawhiba scale')} · ${lvName(F.lv)}</div>
+      <div class="ct">${X('شهادة درجات','Score certificate')}</div><p>${T.cGrant}</p><div class="nm">${esc(F.name||'')}</div>
+      <p>${X('أتمّ الاختبار المحاكي النهائي وحصل على الدرجة','completed the final simulated test with a score of')}</p>
+      <div class="fxbig">${R.score} <small>/ ${FULL}</small></div><div class="fxgr">${X('التقييم','Rating')}: ${R.grade}</div>
+      <p>${msg(R)}</p>${aspTable(R)}
+      <div class="sig"><div><span class="sub">${T.cDate}</span><b>${date}</b></div><div><span class="sub">${T.cTrainer}</span><b>${T.cTrainerName}</b></div></div>
+      <div class="fxnote">${X('شهادة تدريبية غير رسمية؛ الدرجة تقديرية على غرار سلّم مقياس موهبة ولا تمثّل نتيجة المقياس الرسمي.','Unofficial practice certificate; the score is an estimate modelled on the Mawhiba scale and is not an official result.')}</div></div>`;
+  }
+  function drawResult(){
+    const R=F.R,pos=v=>((v-1000)/1000*100).toFixed(1)+'%';
+    el.innerHTML=top(`${lvName(F.lv)} · ${esc(F.name)}`)+`<div class="fx-body"><div class="fx-card">
+      <div class="fx-score"><h2>${X('نتيجتك في الاختبار المحاكي النهائي','Your result in the final simulated test')}</h2>
+        <div class="big">${R.score} <small>/ ${FULL}</small></div><div class="fx-grade g${R.g}">${X('التقييم','Rating')}: ${R.grade}</div>
+        <p class="fx-msg ${R.score>=PASS?'pass':'near'}">${msg(R)}</p>
+        <div class="fx-meter" dir="ltr"><i style="left:${pos(R.score)}"></i><span style="left:0">1000</span><span style="left:${pos(PASS)}">${PASS}</span><span style="left:${pos(TOP)}">${TOP}</span><span style="left:100%">${FULL}</span></div></div>
+      ${aspTable(R)}
+      <p style="color:#55607a;font-size:14px">${X(`الوقت المستغرق: <b dir="ltr">${mmss(F.used)}</b> · صحيحة ${R.right} · خاطئة ${R.wrong} · بلا إجابة ${R.blank}`,`Time used: <b dir="ltr">${mmss(F.used)}</b> · correct ${R.right} · wrong ${R.wrong} · blank ${R.blank}`)}</p>
+      <p id="fxSync" style="font-size:14px;color:#146c43"></p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:10px 0 18px"><button type="button" class="fx-b gold" data-fx="print">${X('طباعة الشهادة / حفظ PDF','Print certificate / save PDF')}</button><button type="button" class="fx-b pri" data-fx="answers">${X('مراجعة الإجابات والشرح','Review answers & explanations')}</button><button type="button" class="fx-b" data-fx="again">${X('اختبار جديد','New test')}</button><button type="button" class="fx-b" data-fx="home">${X('الرئيسية','Home')}</button></div>
+      ${cert()}
+    </div></div>`;
+    syncNote();
+  }
+  function drawAnswers(){
+    let h='';
+    F.secs.forEach((s,si)=>{h+=`<h3>${sn(si)}</h3>`;
+      s.keys.forEach((k,i)=>{const q=item(k).q,Lq=L_(q),a=F.ans[k],ok=a===q.ans;
+        h+=`<div class="fx-rev"><div class="h"><span>${X('السؤال','Question')} ${i+1}</span><span style="color:#55607a;font-weight:500">${an(item(k).asp)}</span><span class="${a===undefined?'blb':ok?'okb':'nob'}">${a===undefined?X('بلا إجابة','Blank'):ok?X('✓ صحيحة','✓ Correct'):X('✗ خاطئة','✗ Wrong')}</span></div>
+          <div class="fx-stem">${Lq.pass?`<div class="passage">${Lq.pass}</div>`:''}<p>${q.html?Lq.q:esc(Lq.q)}</p>${Lq.fig?`<div class="fig">${Lq.fig}</div>`:''}</div>
+          <div class="fx-opts ${q.figOpts?'grid':''}">${q.order.map((o,pos)=>`<div class="fx-opt ${pos===q.ans?'ok':a===pos?'no':''}"><span class="L">${t().let[pos]}</span><span class="c">${q.figOpts?Lq.o[o]:esc(Lq.o[o])}</span></div>`).join('')}</div>
+          ${Lq.e?`<div class="ex"><b>${X('التوضيح','Explanation')}:</b> ${Lq.e}</div>`:''}</div>`;});});
+    el.innerHTML=top(`${lvName(F.lv)} · ${esc(F.name)}`)+`<div class="fx-body"><div class="fx-card"><h2>${X('مراجعة الإجابات','Answer review')}</h2>${h}</div></div><div class="fx-bot"><button type="button" class="fx-b pri" data-fx="result">${X('رجوع للنتيجة','Back to the result')}</button></div>`;
+  }
+  window.addEventListener('beforeunload',()=>saveProg());
+  return {open,close,pen:()=>F&&F.phase==='run'&&tm&&F.view==='q'?'fx'+F.sec+'_'+F.cur:null,_dbg:()=>({F,BANK})};
+})();
+</script>
 <script>/* ================== on-screen pen (scratch work during practice; nothing is saved) ================== */
 const Pen = (() => {
   let on = false, cv = null, ctx = null, wrap = null, btn = null, colors = null, color = "#2563eb", drawing = false, last = null, key = null, getState = null;
@@ -4703,7 +5073,7 @@ const Pen = (() => {
   };
 })();
 
-try{Pen.init(()=>({visible:st.screen==="exam",key:"e"+st.cur}),document.getElementById("app"));}catch(e){}
+try{Pen.init(()=>{const k=window.FX&&FX.pen&&FX.pen();return k?{visible:true,key:k}:{visible:st.screen==="exam"&&!document.getElementById("fx"),key:"e"+st.cur};},document.getElementById("app"));}catch(e){}
 </script>
 <script>/* ================== subscription card + contacts (shared by both pages) ================== */
 const SUB = {
