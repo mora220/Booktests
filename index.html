@@ -1188,23 +1188,25 @@ const XP = (() => {
   const LAME = "lame.min.js";
   let IDX = null, idxLoading = null;
   const ar = () => LANGUI !== "en";
-  const TT = k => ({
+  const TT = (k, ...args) => { const v = ({
     play: ["شرح المدرب", "Trainer's explanation"], rec: ["سجّل شرحًا", "Record explanation"], reRec: ["إعادة التسجيل", "Re-record"], del: ["حذف الشرح", "Delete"],
     delQ: ["حذف شرح هذه الفكرة نهائيًا؟", "Delete this explanation?"], start: ["ابدأ التسجيل", "Start recording"], stop: ["إنهاء", "Finish"], cancel: ["إلغاء", "Cancel"], close: ["إغلاق", "Close"],
     reveal: ["إظهار الحل", "Show solution"], hide: ["إخفاء الحل", "Hide solution"], clear: ["مسح الكتابة", "Clear ink"], undo: ["تراجع", "Undo"],
     pen: ["قلم", "Pen"], move: ["تحريك", "Scroll"], save: ["حفظ الشرح", "Save"], again: ["سجّل من جديد", "Record again"], saving: ["جاري الحفظ…", "Saving…"],
     saved: ["تم حفظ الشرح ✓", "Saved ✓"], saveErr: ["تعذّر الحفظ، حاول مرة أخرى.", "Could not save, try again."], micErr: ["لازم تسمح باستخدام الميكروفون علشان التسجيل.", "Allow microphone access to record."],
     noRec: ["المتصفح ده ما بيدعمش التسجيل. جرّب Chrome أو Safari حديث.", "This browser can't record. Use a recent Chrome or Safari."],
-    ready: ["جهّز السؤال، ودوس «ابدأ التسجيل». تقدر تكتب بالقلم على السؤال أو في المساحة البيضا تحته.", "Get ready, then press “Start recording”. Write on the question or the blank board below."],
+    ready: ["ابدأ بطريقة الحل السريع، وبعدها انتقل للسؤال بزرار «التالي»، وزوّد أسئلة بزرار «سؤال جديد». تقدر تكتب بالقلم في أي مكان. دوس «ابدأ التسجيل» لما تكون جاهز.", "Start with the quick method, move to the question with “Next”, and add more with “New question”. Write anywhere with the pen. Press “Start recording” when ready."],
     review: ["اسمع الشرح، ولو تمام دوس «حفظ الشرح».", "Review it, then press “Save”."], board: ["مساحة للحل", "Working space"], limit: ["الحد الأقصى ٥ دقائق", "Max 5 minutes"],
     loading: ["جاري تحميل الشرح…", "Loading…"], loadErr: ["تعذّر تحميل الشرح. تأكد من الإنترنت وحاول مرة أخرى.", "Could not load the explanation."],
-    speed: ["السرعة", "Speed"], forQ: ["على هذا السؤال", "on this question"], chip: ["شرح", "Video"], replay: ["إعادة", "Replay"]
-  }[k][ar() ? 0 : 1]);
+    speed: ["السرعة", "Speed"], forQ: ["على هذا السؤال", "on this question"], chip: ["شرح", "Video"], replay: ["إعادة", "Replay"],
+    prev: ["‹ السابق", "‹ Back"], next: ["التالي ›", "Next ›"], newq: ["سؤال جديد", "New question"], kMethod: ["طريقة الحل السريع", "The quick method"], kQ: [n => `سؤال ${n}`, n => `Question ${n}`]
+  }[k][ar() ? 0 : 1]); return typeof v === "function" ? v(...args) : v; };
   const fmt = ms => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
   const keyOf = (id, lang) => lang === "en" ? id + "_en" : id;
 
   /* ---------- storage (Firestore on the free plan; in-memory when testing) ---------- */
   const MEM = { docs: {} };
+  const partNames = o => [["s", o.ns], ["a", o.na], ["h", o.nh]].flatMap(([p, n]) => [...Array(n || 0).keys()].map(i => p + i));
   const db = () => firebase.firestore();
   const S = {
     async index() {
@@ -1214,7 +1216,7 @@ const XP = (() => {
     async get(key) {
       if (window.QS_MOCK) { const m = MEM.docs[key]; if (!m) return null; return { meta: m.meta, parts: m.parts }; }
       const ref = db().collection("explains").doc(key); const d = await ref.get(); if (!d.exists) return null;
-      const meta = d.data(); const names = [...Array(meta.ns || 0).keys()].map(i => "s" + i).concat([...Array(meta.na || 0).keys()].map(i => "a" + i));
+      const meta = d.data(); const names = partNames(meta);
       const docs = await Promise.all(names.map(n => ref.collection("parts").doc(n).get()));
       const parts = {}; docs.forEach((x, i) => parts[names[i]] = x.exists ? x.data().d : ""); return { meta, parts };
     },
@@ -1223,7 +1225,7 @@ const XP = (() => {
       if (window.QS_MOCK) { MEM.docs[key] = { meta, parts }; const ix = MEM.docs._index = MEM.docs._index || { m: {} }; ix.m[key] = entry; return; }
       const ref = db().collection("explains").doc(key); const old = await ref.get();
       const b = db().batch();
-      if (old.exists) { const o = old.data(); for (let i = 0; i < (o.ns || 0); i++) b.delete(ref.collection("parts").doc("s" + i)); for (let i = 0; i < (o.na || 0); i++) b.delete(ref.collection("parts").doc("a" + i)); }
+      if (old.exists) partNames(old.data()).forEach(n => b.delete(ref.collection("parts").doc(n)));
       await b.commit();
       for (const n in parts) await ref.collection("parts").doc(n).set({ free: meta.free, d: parts[n] });
       await ref.set(Object.assign({}, meta, { at: firebase.firestore.FieldValue.serverTimestamp() }));
@@ -1233,7 +1235,7 @@ const XP = (() => {
       if (window.QS_MOCK) { delete MEM.docs[key]; if (MEM.docs._index) delete MEM.docs._index.m[key]; return; }
       const ref = db().collection("explains").doc(key); const d = await ref.get();
       const b = db().batch();
-      if (d.exists) { const o = d.data(); for (let i = 0; i < (o.ns || 0); i++) b.delete(ref.collection("parts").doc("s" + i)); for (let i = 0; i < (o.na || 0); i++) b.delete(ref.collection("parts").doc("a" + i)); b.delete(ref); }
+      if (d.exists) { partNames(d.data()).forEach(n => b.delete(ref.collection("parts").doc(n))); b.delete(ref); }
       b.update(db().collection("explains").doc("_index"), new firebase.firestore.FieldPath("m", key), firebase.firestore.FieldValue.delete());
       await b.commit();
     }
@@ -1301,7 +1303,7 @@ const XP = (() => {
     return box.innerHTML;
   }
   function makeStage(host, html, opts) {
-    host.innerHTML = `<div class="xpwrap"><div class="xpstage" dir="${opts.dir || "rtl"}" style="width:${opts.w || W}px"><div class="xpcontent">${html}<div class="xpboard"><span>${TT("board")}</span></div></div><svg class="xpink" xmlns="http://www.w3.org/2000/svg"></svg></div></div>`;
+    host.innerHTML = `<div class="xpwrap"><div class="xpstage" dir="${opts.dir || "rtl"}" style="width:${opts.w || W}px"><div class="xpcontent">${html}${opts.board === false ? "" : `<div class="xpboard"><span>${TT("board")}</span></div>`}</div><svg class="xpink" xmlns="http://www.w3.org/2000/svg"></svg></div></div>`;
     const wrap = host.querySelector(".xpwrap"), stage = host.querySelector(".xpstage"), svg = host.querySelector(".xpink");
     const SW = opts.w || W; const st = { wrap, stage, svg, s: 1, H: 0, W: SW };
     st.fit = () => {
@@ -1321,56 +1323,92 @@ const XP = (() => {
   }
   function unmodal(m) { m.remove(); if (!document.querySelector(".xpm")) document.documentElement.classList.remove("xplock"); }
 
-  /* ---------- recorder (admin) ---------- */
+  /* ---------- recorder (admin): several slides — the quick method, then questions ---------- */
+  const MAX_SLIDES = 12;
+  function methodHTML(I) {
+    const box = document.createElement("div");
+    box.innerHTML = `<div class="xpmeth"><div class="lhead"><span class="num">${t("idea", I.n)}</span><div><h1>${I.t}</h1><p>${I.concept}</p></div></div>
+      <div class="panel fast"><h3>${BOLT}${t("quick")}</h3><ol>${I.fast.map(s => `<li>${s}</li>`).join("")}</ol></div>
+      ${I.trap ? `<div class="trap"><b>${t("trap")}</b> ${I.trap}</div>` : ""}${I.table ? `<div class="rel">${I.table.map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join("")}</div>` : ""}</div>`;
+    try { arabize(box); } catch (e) { }
+    return box.innerHTML;
+  }
   const Recorder = {
     async open(id, ctx) {
       const I = ideaById(id); if (!I) return;
-      let q, steps, a;
-      if (ctx === "practice" && RUN && RUN.qs && RUN.qs[RUN.i]) { q = RUN.qs[RUN.i]; steps = q.s && q.s.length ? q.s : [t("reviewStep", I.fast[0])]; a = q.a; }
-      else { const Ex = I.ex; q = LANGUI === "en" ? (I._exq = I._exq || bookQs(I)[0]) : Ex; steps = LANGUI === "en" ? (q.s || []) : Ex.s; a = LANGUI === "en" ? q.a : Ex.a; }
       try { await document.fonts.ready; } catch (e) { }
-      const html = snapshot(q, steps, a);
+      const dir = ar() ? "rtl" : "ltr";
+      const avoid = new Set(); const qKey = q => q.q + "|" + [...q.o].sort().join("|");
+      const qHtml = q => { avoid.add(qKey(q)); return snapshot(q, q.s && q.s.length ? q.s : [t("reviewStep", I.fast[0])], q.a); };
+      const firstQ = ctx === "practice" && RUN && RUN.qs && RUN.qs[RUN.i] ? RUN.qs[RUN.i] : (LANGUI === "en" ? (I._exq = I._exq || bookQs(I)[0]) : I.ex);
       const m = modal("rec", `<div class="xpbar"><b class="xptitle">${MIC_SVG}<span>${esc(I.t)}</span></b><span class="xptime keepdig" aria-live="off">0:00</span>
         <div class="xptools"><button type="button" class="btn" data-a="mode" aria-pressed="true">✏️ <span>${TT("pen")}</span></button>
         <span class="xpcols">${COLORS.map((c, i) => `<button type="button" data-c="${i}" style="background:${c}" aria-label="${c}" aria-pressed="${i === 0}"></button>`).join("")}</span>
         <button type="button" class="btn" data-a="undo">${TT("undo")}</button><button type="button" class="btn" data-a="clear">${TT("clear")}</button><button type="button" class="btn" data-a="reveal">${TT("reveal")}</button></div>
         <div class="xpacts"><button type="button" class="btn pri" data-a="go">● ${TT("start")}</button><button type="button" class="btn" data-a="x">${TT("cancel")}</button></div></div>
-        <p class="xpnote">${TT("ready")} <small>(${TT("limit")})</small></p><div class="xpscroll"><div class="xphost"></div></div>`);
-      const host = m.querySelector(".xphost"), scroller = m.querySelector(".xpscroll");
-      const st = makeStage(host, html, { dir: ar() ? "rtl" : "ltr" });
-      const R = { strokes: [], ev: [], color: 0, pen: true, rec: false, t0: 0, cur: null, revealed: false, mr: null, chunks: [], stream: null, timer: null };
+        <div class="xpnav"><button type="button" class="btn" data-a="prev">${TT("prev")}</button><b class="xppg keepdig"></b><button type="button" class="btn" data-a="next">${TT("next")}</button>
+        <button type="button" class="btn xpnewq" data-a="newq">＋ ${TT("newq")}</button><span class="xpkind"></span></div>
+        <p class="xpnote">${TT("ready")} <small>(${TT("limit")})</small></p><div class="xpscroll"><div class="xphosts"></div></div>`);
+      const hosts = m.querySelector(".xphosts"), scroller = m.querySelector(".xpscroll"), $m = s => m.querySelector(s);
+      const R = { strokes: [], ev: [], color: 0, pen: true, rec: false, t0: 0, cur: null, mr: null, chunks: [], stream: null, timer: null, cur_i: 0 };
       const now = () => R.rec ? Math.round(performance.now() - R.t0) : 0;
-      const $m = s => m.querySelector(s);
-      const setMode = pen => { R.pen = pen; const b = $m('[data-a="mode"]'); b.setAttribute("aria-pressed", pen); b.innerHTML = pen ? `✏️ <span>${TT("pen")}</span>` : `✋ <span>${TT("move")}</span>`; st.svg.classList.toggle("drawing", pen); };
+      const slides = [];
+      function addSlide(html, kind) {
+        if (slides.length >= MAX_SLIDES) return -1;
+        const host = document.createElement("div"); host.className = "xphost"; host.hidden = true; hosts.appendChild(host);
+        const st = makeStage(host, html, { dir });
+        const sl = { html, kind, host, st, live: [], rev: false, scroll: 0 }; slides.push(sl); wire(sl, slides.length - 1); return slides.length - 1;
+      }
+      function wire(sl, idx) {
+        const P = e => { const r = sl.st.svg.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / sl.st.s * 2), Math.round((e.clientY - r.top) / sl.st.s * 2)]; };
+        sl.st.svg.addEventListener("pointerdown", e => {
+          if (!R.pen || (e.pointerType === "mouse" && e.button !== 0)) return;
+          e.preventDefault(); sl.st.svg.setPointerCapture(e.pointerId);
+          const [x, y] = P(e); R.cur = { c: R.color, g: idx, p: [x, y, now()] };
+          const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("stroke", COLORS[R.color]); path.setAttribute("d", pathD(R.cur.p, 3)); sl.st.svg.appendChild(path); R.cur.el = path;
+        });
+        sl.st.svg.addEventListener("pointermove", e => {
+          if (!R.cur || R.cur.g !== idx) return; e.preventDefault();
+          const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+          for (const ce of (evs.length ? evs : [e])) { const [x, y] = P(ce); const p = R.cur.p, n = p.length; if (Math.abs(p[n - 3] - x) + Math.abs(p[n - 2] - y) < 3) continue; p.push(x, y, now()); }
+          R.cur.el.setAttribute("d", pathD(R.cur.p, R.cur.p.length));
+        });
+        sl.st.svg.addEventListener("pointerup", end); sl.st.svg.addEventListener("pointercancel", end);
+      }
+      const end = () => { if (!R.cur) return; const s = R.cur; R.cur = null; slides[s.g].live.push(s.el); delete s.el; R.strokes.push(s); };
+      const vy = () => Math.round(scroller.scrollTop / slides[R.cur_i].st.s);
+      function show(i) {
+        end(); const old = slides[R.cur_i]; if (old) old.scroll = scroller.scrollTop;
+        R.cur_i = i; slides.forEach((s, k) => s.host.hidden = k !== i); const sl = slides[i]; sl.st.fit();
+        scroller.scrollTop = sl.scroll || 0;
+        $m(".xppg").textContent = `${i + 1} / ${slides.length}`;
+        $m('[data-a="prev"]').disabled = i === 0; $m('[data-a="next"]').disabled = i === slides.length - 1;
+        $m(".xpkind").textContent = sl.kind === "m" ? TT("kMethod") : TT("kQ", slides.slice(0, i + 1).filter(s => s.kind === "q").length);
+        const rb = $m('[data-a="reveal"]'); rb.disabled = sl.kind !== "q"; rb.textContent = sl.rev ? TT("hide") : TT("reveal");
+        $m('[data-a="newq"]').disabled = slides.length >= MAX_SLIDES;
+        if (R.rec) { R.ev.push({ t: now(), k: "p", p: i }); R.ev.push({ t: now(), k: "v", p: i, y: vy() }); }
+      }
+      addSlide(methodHTML(I), "m"); addSlide(qHtml(firstQ), "q");
+      show(ctx === "practice" ? 1 : 0);
+      const setMode = pen => { R.pen = pen; const b = $m('[data-a="mode"]'); b.setAttribute("aria-pressed", pen); b.innerHTML = pen ? `✏️ <span>${TT("pen")}</span>` : `✋ <span>${TT("move")}</span>`; m.classList.toggle("drawing", pen); };
       setMode(true);
-      // drawing
-      const P = e => { const r = st.svg.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / st.s * 2), Math.round((e.clientY - r.top) / st.s * 2)]; };
-      const live = [];  // svg paths of visible strokes, for undo/clear while recording
-      st.svg.addEventListener("pointerdown", e => {
-        if (!R.pen || (e.pointerType === "mouse" && e.button !== 0)) return;
-        e.preventDefault(); st.svg.setPointerCapture(e.pointerId);
-        const [x, y] = P(e); R.cur = { c: R.color, p: [x, y, now()] };
-        const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("stroke", COLORS[R.color]); path.setAttribute("d", pathD(R.cur.p, 3)); st.svg.appendChild(path); R.cur.el = path;
-      });
-      st.svg.addEventListener("pointermove", e => {
-        if (!R.cur) return; e.preventDefault();
-        const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
-        for (const ce of (evs.length ? evs : [e])) { const [x, y] = P(ce); const p = R.cur.p, n = p.length; if (Math.abs(p[n - 3] - x) + Math.abs(p[n - 2] - y) < 3) continue; p.push(x, y, now()); }
-        R.cur.el.setAttribute("d", pathD(R.cur.p, R.cur.p.length));
-      });
-      const end = () => { if (!R.cur) return; const s = R.cur; R.cur = null; s.e = now(); live.push(s.el); delete s.el; R.strokes.push(s); };
-      st.svg.addEventListener("pointerup", end); st.svg.addEventListener("pointercancel", end);
-      // scroll position, so the student's screen follows the teacher's view
-      let lastV = -1; scroller.addEventListener("scroll", () => { if (!R.rec) return; const y = Math.round(scroller.scrollTop / st.s); if (Math.abs(y - lastV) < 20) return; lastV = y; R.ev.push({ t: now(), k: "v", y }); }, { passive: true });
+      let lastV = -1; scroller.addEventListener("scroll", () => { if (!R.rec) return; const y = vy(); if (Math.abs(y - lastV) < 20) return; lastV = y; R.ev.push({ t: now(), k: "v", p: R.cur_i, y }); }, { passive: true });
       m.addEventListener("click", async e => {
         const b = e.target.closest("button"); if (!b) return;
         if (b.dataset.c != null) { R.color = +b.dataset.c; m.querySelectorAll("[data-c]").forEach(x => x.setAttribute("aria-pressed", x === b)); return; }
-        const a = b.dataset.a;
+        const a = b.dataset.a, sl = slides[R.cur_i];
         if (a === "mode") setMode(!R.pen);
-        if (a === "undo") { const p = live.pop(); if (p) { p.remove(); R.ev.push({ t: now(), k: "u" }); } }
-        if (a === "clear") { live.splice(0).forEach(p => p.remove()); R.ev.push({ t: now(), k: "c" }); }
-        if (a === "reveal") { R.revealed = !R.revealed; st.stage.classList.toggle("rev", R.revealed); b.textContent = R.revealed ? TT("hide") : TT("reveal"); R.ev.push({ t: now(), k: R.revealed ? "r" : "h" }); }
-        if (a === "x") { stopAll(); st.destroy(); unmodal(m); }
+        if (a === "undo") { const p = sl.live.pop(); if (p) { p.remove(); R.ev.push({ t: now(), k: "u", p: R.cur_i }); } }
+        if (a === "clear") { sl.live.splice(0).forEach(p => p.remove()); R.ev.push({ t: now(), k: "c", p: R.cur_i }); }
+        if (a === "reveal" && sl.kind === "q") { sl.rev = !sl.rev; sl.st.stage.classList.toggle("rev", sl.rev); b.textContent = sl.rev ? TT("hide") : TT("reveal"); R.ev.push({ t: now(), k: sl.rev ? "r" : "h", p: R.cur_i }); }
+        if (a === "prev" && R.cur_i > 0) show(R.cur_i - 1);
+        if (a === "next" && R.cur_i < slides.length - 1) show(R.cur_i + 1);
+        if (a === "newq") {
+          let q = null; try { LANG = LANGUI; q = draw(I, 1, avoid)[0]; } catch (er) { q = null; }
+          if (!q) { b.disabled = true; return; }
+          const i = addSlide(qHtml(q), "q"); if (i >= 0) show(i);
+        }
+        if (a === "x") { stopAll(); slides.forEach(s => s.st.destroy()); unmodal(m); }
         if (a === "go") start(b);
         if (a === "stop") finish();
       });
@@ -1382,38 +1420,45 @@ const XP = (() => {
         const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find(x => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x)) || "";
         R.mr = new MediaRecorder(R.stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : undefined); R.chunks = [];
         R.mr.ondataavailable = ev => { if (ev.data && ev.data.size) R.chunks.push(ev.data); };
-        // the ink drawn before pressing start is cleared, so the timeline starts clean
-        live.splice(0).forEach(p => p.remove()); R.strokes = []; R.ev = [];
-        R.ev.push({ t: 0, k: R.revealed ? "r" : "h" }); R.ev.push({ t: 0, k: "v", y: Math.round(scroller.scrollTop / st.s) });
+        // ink drawn while getting ready is cleared, so the timeline starts clean
+        slides.forEach(s => s.live.splice(0).forEach(p => p.remove())); R.strokes = []; R.ev = [];
+        slides.forEach((s, i) => R.ev.push({ t: 0, k: s.rev ? "r" : "h", p: i }));
+        R.ev.push({ t: 0, k: "p", p: R.cur_i }); R.ev.push({ t: 0, k: "v", p: R.cur_i, y: vy() });
         R.mr.start(1000); R.t0 = performance.now(); R.rec = true;
         btn.dataset.a = "stop"; btn.innerHTML = "■ " + TT("stop"); btn.classList.add("recing"); m.classList.add("on");
-        m.querySelector(".xpnote").hidden = true;
-        R.timer = setInterval(() => { const ms = now(); m.querySelector(".xptime").textContent = fmt(ms); if (ms >= MAX_MS) finish(); }, 250);
+        $m(".xpnote").hidden = true;
+        R.timer = setInterval(() => { const ms = now(); $m(".xptime").textContent = fmt(ms); if (ms >= MAX_MS) finish(); }, 250);
       }
       async function finish() {
         if (!R.rec) return; end(); const dur = now(); clearInterval(R.timer);
         await new Promise(res => { R.mr.onstop = res; R.mr.stop(); }); R.rec = false; R.stream.getTracks().forEach(tr => tr.stop());
         const blob = new Blob(R.chunks, { type: R.mr.mimeType || "audio/webm" });
-        const ink = encodeInk(R.strokes, R.ev, dur);
-        st.destroy(); unmodal(m);
-        Player.preview({ html, dir: ar() ? "rtl" : "ltr", ink, blob, dur, id, ctx, H: st.H });
+        // keep only the slides that were actually shown while recording
+        const used = [...new Set(R.ev.filter(e => e.k === "p").map(e => e.p))].sort((a, b) => a - b); const remap = {}; used.forEach((p, i) => remap[p] = i);
+        const ev = R.ev.filter(e => e.p == null || remap[e.p] != null).map(e => Object.assign({}, e, e.p != null ? { p: remap[e.p] } : {}));
+        const strokes = R.strokes.filter(s => remap[s.g] != null).map(s => Object.assign({}, s, { g: remap[s.g] }));
+        const ink = encodeInk(strokes, ev, dur);
+        const htmls = used.map(i => slides[i].html), kinds = used.map(i => slides[i].kind);
+        slides.forEach(s => s.st.destroy()); unmodal(m);
+        Player.preview({ slides: htmls, kinds, dir, ink, blob, dur, id, ctx });
       }
     }
   };
   function encodeInk(strokes, ev, dur) {
-    // stroke: [color, startMs, x0,y0,dt0, dx,dy,dt, ...] (deltas keep it small)
-    const s = strokes.map(k => { const p = k.p, o = [k.c, p[2], p[0], p[1]]; for (let i = 3; i < p.length; i += 3) o.push(p[i] - p[i - 3], p[i + 1] - p[i - 2], p[i + 2] - p[i - 1]); return o; });
-    return JSON.stringify({ v: 1, d: dur, s, e: ev });
+    // stroke: [color, startMs, slide, x0,y0, dx,dy,dt, ...] (deltas keep it small)
+    const s = strokes.map(k => { const p = k.p, o = [k.c, p[2], k.g || 0, p[0], p[1]]; for (let i = 3; i < p.length; i += 3) o.push(p[i] - p[i - 3], p[i + 1] - p[i - 2], p[i + 2] - p[i - 1]); return o; });
+    return JSON.stringify({ v: 2, d: dur, s, e: ev });
   }
   function decodeInk(str) {
-    const o = JSON.parse(str); const strokes = o.s.map(a => { const p = [a[2], a[3], a[1]]; for (let i = 4; i < a.length; i += 3) { const n = p.length; p.push(p[n - 3] + a[i], p[n - 2] + a[i + 1], p[n - 1] + a[i + 2]); } return { c: a[0], p, t0: a[1], t1: p[p.length - 1] }; });
-    const ev = (o.e || []).slice().sort((a, b) => a.t - b.t);
-    // when does each stroke disappear (clear / undo)?
+    const o = JSON.parse(str), v2 = o.v >= 2;
+    const strokes = o.s.map(a => { const off = v2 ? 3 : 2; const p = [a[off], a[off + 1], a[1]]; for (let i = off + 2; i < a.length; i += 3) { const n = p.length; p.push(p[n - 3] + a[i], p[n - 2] + a[i + 1], p[n - 1] + a[i + 2]); } return { c: a[0], g: v2 ? a[2] : 0, p, t0: a[1], t1: p[p.length - 1] }; });
+    const ev = (o.e || []).map(e => Object.assign({ p: 0 }, e)).sort((a, b) => a.t - b.t);
+    // when does each stroke disappear (clear / undo on its own slide)?
     const order = strokes.map((s, i) => i).sort((a, b) => strokes[a].t1 - strokes[b].t1);
     strokes.forEach(s => s.hide = Infinity);
     for (const e of ev) {
       if (e.k !== "c" && e.k !== "u") continue;
-      const vis = order.filter(i => strokes[i].t1 <= e.t && strokes[i].hide === Infinity);
+      const vis = order.filter(i => strokes[i].g === e.p && strokes[i].t1 <= e.t && strokes[i].hide === Infinity);
       if (e.k === "c") vis.forEach(i => strokes[i].hide = e.t); else if (vis.length) strokes[vis[vis.length - 1]].hide = e.t;
     }
     return { dur: o.d, strokes, ev };
@@ -1446,30 +1491,33 @@ const XP = (() => {
       try { data = await S.get(key); } catch (e) { data = null; }
       if (!document.body.contains(m)) return;
       if (!data) { m.querySelector(".xpwait").textContent = TT("loadErr"); return; }
-      const meta = data.meta; const ink = [...Array(meta.ns || 0).keys()].map(i => data.parts["s" + i]).join("");
-      const aud = [...Array(meta.na || 0).keys()].map(i => data.parts["a" + i]).join("");
+      const meta = data.meta, join = (p, n) => [...Array(n || 0).keys()].map(i => data.parts[p + i] || "").join("");
+      const ink = join("s", meta.ns), aud = join("a", meta.na);
+      let slides = [meta.html], kinds = ["q"]; if (meta.nh) { try { const h = JSON.parse(join("h", meta.nh)); slides = h.slides; kinds = h.kinds; } catch (e) { } }
       const I = ideaById(meta.idea);
       unmodal(m);
-      this.show({ html: meta.html, dir: meta.dir, w: meta.w || 600, ink, blob: fromB64(aud, meta.mime || "audio/mpeg"), title: I ? I.t : "" });
+      this.show({ slides, kinds, dir: meta.dir, w: meta.w || 600, ink, blob: fromB64(aud, meta.mime || "audio/mpeg"), title: I ? I.t : "" });
     },
     preview(o) { this.show(Object.assign({ title: (ideaById(o.id) || {}).t || "", admin: true }, o)); },
     async show(o) {
       try { await document.fonts.ready; } catch (e) { }
-      const m = modal("play", `<div class="xpbar"><b class="xptitle">${PLAY_SVG}<span>${esc(o.title || TT("play"))}</span></b>
+      const m = modal("play", `<div class="xpbar"><b class="xptitle">${PLAY_SVG}<span>${esc(o.title || TT("play"))}</span></b><span class="xppg keepdig"></span>
         ${o.admin ? `<div class="xpacts"><button type="button" class="btn pri" data-a="save">${TT("save")}</button><button type="button" class="btn" data-a="again">${TT("again")}</button><button type="button" class="btn" data-a="x">${TT("cancel")}</button></div>` : `<div class="xpacts"><button type="button" class="btn" data-a="x">${TT("close")}</button></div>`}</div>
-        ${o.admin ? `<p class="xpnote">${TT("review")}</p>` : ""}<div class="xpscroll"><div class="xphost"></div></div>
+        ${o.admin ? `<p class="xpnote">${TT("review")}</p>` : ""}<div class="xpscroll"><div class="xphosts"></div></div>
         <div class="xpctl"><button type="button" class="xppp" data-a="pp" aria-label="play"></button><span class="xpcur keepdig">0:00</span><input type="range" class="xpseek" min="0" max="1000" value="0" aria-label="seek"><span class="xpdur keepdig">0:00</span>
         <button type="button" class="xpspd" data-a="spd" title="${TT("speed")}">1×</button></div>`);
-      const host = m.querySelector(".xphost"), scroller = m.querySelector(".xpscroll");
-      const st = makeStage(host, o.html, { dir: o.dir, w: o.w || W });
+      const hostsEl = m.querySelector(".xphosts"), scroller = m.querySelector(".xpscroll"), $m = s => m.querySelector(s);
+      const kinds = o.kinds || o.slides.map(() => "q");
+      const stages = o.slides.map((html, i) => { const h = document.createElement("div"); h.className = "xphost"; h.hidden = i !== 0; hostsEl.appendChild(h); return makeStage(h, html, { dir: o.dir, w: o.w || W }); });
       const D = decodeInk(o.ink); const dur = Math.max(D.dur || 0, 1);
-      const paths = D.strokes.map(s => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("stroke", COLORS[s.c] || COLORS[0]); p.style.display = "none"; st.svg.appendChild(p); return p; });
+      const paths = D.strokes.map(s => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("stroke", COLORS[s.c] || COLORS[0]); p.style.display = "none"; (stages[s.g] || stages[0]).svg.appendChild(p); return p; });
       const drawn = D.strokes.map(() => -1);
       const audio = new Audio(); audio.preload = "auto"; const url = URL.createObjectURL(o.blob); audio.src = url;
-      const $m = s => m.querySelector(s); const pp = $m(".xppp"), seek = $m(".xpseek");
+      const pp = $m(".xppp"), seek = $m(".xpseek");
       $m(".xpdur").textContent = fmt(dur);
-      let raf = 0, userScroll = 0, lastFollow = -1, revealed = null;
-      const T = () => Math.min(dur, audio.currentTime * 1000);
+      let raf = 0, userScroll = 0, lastFollow = -1, page = -1; const revs = stages.map(() => null);
+      let ended = false;
+      const T = () => ended ? dur : Math.min(dur, audio.currentTime * 1000);
       function frame() {
         const t = T();
         D.strokes.forEach((s, i) => {
@@ -1477,10 +1525,14 @@ const XP = (() => {
           if (vis) { if (t >= s.t1) upto = s.p.length; else { upto = 3; while (upto < s.p.length && s.p[upto + 2] <= t) upto += 3; } }
           if (upto !== drawn[i]) { drawn[i] = upto; if (!upto) paths[i].style.display = "none"; else { paths[i].style.display = ""; paths[i].setAttribute("d", pathD(s.p, upto)); } }
         });
-        let rv = false, vy = null; for (const e of D.ev) { if (e.t > t) break; if (e.k === "r") rv = true; if (e.k === "h") rv = false; if (e.k === "v") vy = e.y; }
-        if (rv !== revealed) { revealed = rv; st.stage.classList.toggle("rev", rv); }
+        let pg = 0; const rv = stages.map(() => false); const vys = {};
+        for (const e of D.ev) { if (e.t > t) break; if (e.k === "p") pg = e.p; if (e.k === "r") rv[e.p] = true; if (e.k === "h") rv[e.p] = false; if (e.k === "v") vys[e.p] = e.y; }
+        pg = Math.min(pg, stages.length - 1);
+        if (pg !== page) { page = pg; stages.forEach((s, k) => s.wrap.parentNode.hidden = k !== pg); stages[pg].fit(); lastFollow = -1; scroller.scrollTop = Math.max(0, (vys[pg] || 0) * stages[pg].s); if (stages.length > 1) $m(".xppg").textContent = `${pg + 1} / ${stages.length}`; }
+        rv.forEach((r, k) => { if (r !== revs[k]) { revs[k] = r; stages[k].stage.classList.toggle("rev", r); } });
         // follow the teacher's view unless the student scrolled in the last 4 seconds
-        if (vy != null && Date.now() - userScroll > 4000 && !audio.paused) { const target = Math.max(0, vy * st.s); if (Math.abs(target - lastFollow) > 2) { lastFollow = target; autoScroll = true; scroller.scrollTo({ top: target, behavior: "smooth" }); } }
+        const vy = vys[pg];
+        if (vy != null && Date.now() - userScroll > 4000 && !audio.paused) { const target = Math.max(0, vy * stages[pg].s); if (Math.abs(target - lastFollow) > 2) { lastFollow = target; autoScroll = true; scroller.scrollTo({ top: target, behavior: "smooth" }); } }
         $m(".xpcur").textContent = fmt(t); if (!seeking) seek.value = Math.round(1000 * t / dur);
         pp.classList.toggle("on", !audio.paused); pp.setAttribute("aria-label", audio.paused ? "play" : "pause");
         raf = audio.paused ? 0 : requestAnimationFrame(frame);
@@ -1490,14 +1542,14 @@ const XP = (() => {
       ["wheel", "touchmove"].forEach(ev => scroller.addEventListener(ev, () => { autoScroll = false; userScroll = Date.now(); }, { passive: true }));
       const loop = () => { if (!raf) raf = requestAnimationFrame(frame); };
       audio.addEventListener("play", loop); audio.addEventListener("pause", () => { cancelAnimationFrame(raf); raf = 0; frame(); });
-      audio.addEventListener("ended", () => { frame(); });
+      audio.addEventListener("ended", () => { ended = true; frame(); });
       audio.addEventListener("seeked", () => frame());
-      pp.onclick = () => { if (audio.paused) { if (T() >= dur - 50) audio.currentTime = 0; audio.play().catch(() => { }); } else audio.pause(); };
-      seek.addEventListener("input", () => { seeking = true; audio.currentTime = (+seek.value / 1000) * dur / 1000; frame(); });
+      pp.onclick = () => { if (audio.paused) { if (T() >= dur - 50) audio.currentTime = 0; ended = false; audio.play().catch(() => { }); } else audio.pause(); };
+      seek.addEventListener("input", () => { seeking = true; userScroll = 0; ended = false; audio.currentTime = (+seek.value / 1000) * dur / 1000; frame(); });
       seek.addEventListener("change", () => { seeking = false; });
       const SP = [1, 1.25, 1.5, 0.75]; let spi = 0;
       $m(".xpspd").onclick = () => { spi = (spi + 1) % SP.length; audio.playbackRate = SP[spi]; $m(".xpspd").textContent = SP[spi] + "×"; };
-      const close = () => { audio.pause(); cancelAnimationFrame(raf); URL.revokeObjectURL(url); st.destroy(); unmodal(m); document.removeEventListener("keydown", onKey); };
+      const close = () => { audio.pause(); cancelAnimationFrame(raf); URL.revokeObjectURL(url); stages.forEach(s => s.destroy()); unmodal(m); document.removeEventListener("keydown", onKey); };
       const onKey = e => { if (e.key === "Escape") close(); if (e.key === " " && e.target === document.body) { e.preventDefault(); pp.click(); } };
       document.addEventListener("keydown", onKey);
       $m('[data-a="x"]').onclick = close;
@@ -1507,9 +1559,9 @@ const XP = (() => {
           const b = $m('[data-a="save"]'); b.disabled = true; b.textContent = TT("saving");
           try {
             let mp3; try { mp3 = await toMp3(o.blob); } catch (e) { mp3 = null; }
-            const aud = await b64(mp3 || o.blob); const ink = chunks(o.ink, "s"), au = chunks(aud, "a");
-            const meta = { idea: o.id, lang: LANGUI, dir: o.dir, free: isFree(o.id), dur: Math.round(o.dur), w: W, html: o.html, mime: mp3 ? "audio/mpeg" : (o.blob.type || "audio/webm"), ns: Object.keys(ink).length, na: Object.keys(au).length, by: USER.code || "" };
-            await S.save(keyOf(o.id, LANGUI), meta, Object.assign({}, ink, au));
+            const aud = await b64(mp3 || o.blob); const ink = chunks(o.ink, "s"), au = chunks(aud, "a"), hh = chunks(JSON.stringify({ slides: o.slides, kinds }), "h");
+            const meta = { idea: o.id, lang: LANGUI, dir: o.dir, free: isFree(o.id), dur: Math.round(o.dur), w: W, html: "", mime: mp3 ? "audio/mpeg" : (o.blob.type || "audio/webm"), ns: Object.keys(ink).length, na: Object.keys(au).length, nh: Object.keys(hh).length, nslides: o.slides.length, by: USER.code || "" };
+            await S.save(keyOf(o.id, LANGUI), meta, Object.assign({}, ink, au, hh));
             await loadIndex(true); close(); fill(document);
             const fl = document.createElement("div"); fl.className = "xptoast"; fl.textContent = TT("saved"); document.body.appendChild(fl); setTimeout(() => fl.remove(), 2600);
           } catch (e) { console.error(e); b.disabled = false; b.textContent = TT("save"); alert(TT("saveErr")); }
@@ -1558,8 +1610,7 @@ html.xplock,html.xplock body{overflow:hidden}
 .xpboard span{position:absolute;top:8px;inset-inline-start:12px;color:#94a3b8;font-size:13px;font-weight:700}
 .xpink{position:absolute;top:0;left:0;overflow:visible}
 .xpink path{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
-.xpink.drawing{cursor:crosshair;touch-action:none}
-.xpm.rec .xpink{pointer-events:none}.xpm.rec .xpink.drawing{pointer-events:auto}
+.xpm.rec .xpink{pointer-events:none}.xpm.rec.drawing .xpink{pointer-events:auto;cursor:crosshair;touch-action:none}
 .xpm.play .xpink{pointer-events:none}
 .xpctl{display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
 .xppp{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--acc);color:#fff;cursor:pointer;position:relative}
@@ -1568,6 +1619,14 @@ html.xplock,html.xplock body{overflow:hidden}
 .xpseek{flex:1;min-width:60px;accent-color:var(--acc);direction:ltr}
 .xpcur,.xpdur{font:800 14px var(--f-display);color:var(--muted);min-width:40px;text-align:center}
 .xpspd{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 10px;font:800 13px var(--f-display);cursor:pointer}
+.xpnav{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;padding:6px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.xpnav .btn{padding:6px 12px;font-size:14px}.xpnav .btn[disabled]{opacity:.4}
+.xppg{font:900 15px var(--f-display);min-width:48px;text-align:center}.xpbar .xppg{color:var(--muted)}
+.xpnewq{border-color:#f97316!important;color:#c2410c!important}
+.xpkind{color:var(--muted);font-weight:800;font-size:14px;margin-inline-start:auto}
+.xphost[hidden]{display:none}
+.xpstage .xpmeth{background:var(--surface);border-radius:16px;padding:14px}
+.xpstage .xpmeth .lhead{margin:0 0 12px}.xpstage .xpmeth .panel{margin:0 0 10px}
 .xpwait{text-align:center;color:var(--muted);padding:40px 0}
 .xptoast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:95;background:#15803d;color:#fff;border-radius:999px;padding:10px 20px;font:800 15px var(--f-display);box-shadow:0 8px 20px rgba(0,0,0,.2)}
 @media (max-width:560px){.xpbar{padding:8px 10px}.xptools .btn,.xpacts .btn{padding:6px 9px;font-size:13px}.xpscroll{padding:8px}}
