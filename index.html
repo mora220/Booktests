@@ -1177,6 +1177,406 @@ html.fx-on .pentools{max-height:calc(100vh - 220px);max-height:calc(100dvh - 220
   };
 })();
 </script>
+<script>/* ================== trainer explanations «شرح المدرب» ==================
+   The admin records voice + pen strokes over a frozen snapshot of the question.
+   The snapshot is laid out on a fixed 600px stage that is only scaled to the screen,
+   so the writing lands on exactly the same spot on any phone, tablet, rotation or zoom.
+   Stored in Firestore (free plan): explains/_index, explains/{key}, explains/{key}/parts/{s0..,a0..}. */
+const XP = (() => {
+  const W = 480, BOARD_H = 340, MAX_MS = 5 * 60 * 1000, CHUNK = 700000;
+  const COLORS = ["#2563eb", "#dc2626", "#16a34a", "#111827", "#f59e0b"];
+  const LAME = "lame.min.js";
+  let IDX = null, idxLoading = null;
+  const ar = () => LANGUI !== "en";
+  const TT = k => ({
+    play: ["شرح المدرب", "Trainer's explanation"], rec: ["سجّل شرحًا", "Record explanation"], reRec: ["إعادة التسجيل", "Re-record"], del: ["حذف الشرح", "Delete"],
+    delQ: ["حذف شرح هذه الفكرة نهائيًا؟", "Delete this explanation?"], start: ["ابدأ التسجيل", "Start recording"], stop: ["إنهاء", "Finish"], cancel: ["إلغاء", "Cancel"], close: ["إغلاق", "Close"],
+    reveal: ["إظهار الحل", "Show solution"], hide: ["إخفاء الحل", "Hide solution"], clear: ["مسح الكتابة", "Clear ink"], undo: ["تراجع", "Undo"],
+    pen: ["قلم", "Pen"], move: ["تحريك", "Scroll"], save: ["حفظ الشرح", "Save"], again: ["سجّل من جديد", "Record again"], saving: ["جاري الحفظ…", "Saving…"],
+    saved: ["تم حفظ الشرح ✓", "Saved ✓"], saveErr: ["تعذّر الحفظ، حاول مرة أخرى.", "Could not save, try again."], micErr: ["لازم تسمح باستخدام الميكروفون علشان التسجيل.", "Allow microphone access to record."],
+    noRec: ["المتصفح ده ما بيدعمش التسجيل. جرّب Chrome أو Safari حديث.", "This browser can't record. Use a recent Chrome or Safari."],
+    ready: ["جهّز السؤال، ودوس «ابدأ التسجيل». تقدر تكتب بالقلم على السؤال أو في المساحة البيضا تحته.", "Get ready, then press “Start recording”. Write on the question or the blank board below."],
+    review: ["اسمع الشرح، ولو تمام دوس «حفظ الشرح».", "Review it, then press “Save”."], board: ["مساحة للحل", "Working space"], limit: ["الحد الأقصى ٥ دقائق", "Max 5 minutes"],
+    loading: ["جاري تحميل الشرح…", "Loading…"], loadErr: ["تعذّر تحميل الشرح. تأكد من الإنترنت وحاول مرة أخرى.", "Could not load the explanation."],
+    speed: ["السرعة", "Speed"], forQ: ["على هذا السؤال", "on this question"], chip: ["شرح", "Video"], replay: ["إعادة", "Replay"]
+  }[k][ar() ? 0 : 1]);
+  const fmt = ms => { const s = Math.max(0, Math.round(ms / 1000)); return Math.floor(s / 60) + ":" + String(s % 60).padStart(2, "0"); };
+  const keyOf = (id, lang) => lang === "en" ? id + "_en" : id;
+
+  /* ---------- storage (Firestore on the free plan; in-memory when testing) ---------- */
+  const MEM = { docs: {} };
+  const db = () => firebase.firestore();
+  const S = {
+    async index() {
+      if (window.QS_MOCK) return (MEM.docs._index || { m: {} }).m;
+      const d = await db().collection("explains").doc("_index").get(); return (d.exists && d.data().m) || {};
+    },
+    async get(key) {
+      if (window.QS_MOCK) { const m = MEM.docs[key]; if (!m) return null; return { meta: m.meta, parts: m.parts }; }
+      const ref = db().collection("explains").doc(key); const d = await ref.get(); if (!d.exists) return null;
+      const meta = d.data(); const names = [...Array(meta.ns || 0).keys()].map(i => "s" + i).concat([...Array(meta.na || 0).keys()].map(i => "a" + i));
+      const docs = await Promise.all(names.map(n => ref.collection("parts").doc(n).get()));
+      const parts = {}; docs.forEach((x, i) => parts[names[i]] = x.exists ? x.data().d : ""); return { meta, parts };
+    },
+    async save(key, meta, parts) {
+      const entry = { d: meta.dur, f: meta.free, u: Date.now(), l: meta.lang };
+      if (window.QS_MOCK) { MEM.docs[key] = { meta, parts }; const ix = MEM.docs._index = MEM.docs._index || { m: {} }; ix.m[key] = entry; return; }
+      const ref = db().collection("explains").doc(key); const old = await ref.get();
+      const b = db().batch();
+      if (old.exists) { const o = old.data(); for (let i = 0; i < (o.ns || 0); i++) b.delete(ref.collection("parts").doc("s" + i)); for (let i = 0; i < (o.na || 0); i++) b.delete(ref.collection("parts").doc("a" + i)); }
+      await b.commit();
+      for (const n in parts) await ref.collection("parts").doc(n).set({ free: meta.free, d: parts[n] });
+      await ref.set(Object.assign({}, meta, { at: firebase.firestore.FieldValue.serverTimestamp() }));
+      await db().collection("explains").doc("_index").set({ m: { [key]: entry } }, { merge: true });
+    },
+    async del(key) {
+      if (window.QS_MOCK) { delete MEM.docs[key]; if (MEM.docs._index) delete MEM.docs._index.m[key]; return; }
+      const ref = db().collection("explains").doc(key); const d = await ref.get();
+      const b = db().batch();
+      if (d.exists) { const o = d.data(); for (let i = 0; i < (o.ns || 0); i++) b.delete(ref.collection("parts").doc("s" + i)); for (let i = 0; i < (o.na || 0); i++) b.delete(ref.collection("parts").doc("a" + i)); b.delete(ref); }
+      b.update(db().collection("explains").doc("_index"), new firebase.firestore.FieldPath("m", key), firebase.firestore.FieldValue.delete());
+      await b.commit();
+    }
+  };
+  const chunks = (s, p) => { const o = {}; let i = 0; for (let k = 0; k < s.length || i === 0; k += CHUNK) o[p + i++] = s.slice(k, k + CHUNK); return o; };
+
+  async function loadIndex(force) {
+    if (IDX && !force) return IDX;
+    if (!idxLoading || force) idxLoading = S.index().then(m => (IDX = m || {})).catch(() => (IDX = IDX || {})).finally(() => { idxLoading = null; });
+    return idxLoading;
+  }
+  /* which saved explanation a student sees for idea `id` (own language first, then the other) */
+  function pick(id) {
+    if (!IDX) return null;
+    const a = keyOf(id, LANGUI), b = keyOf(id, LANGUI === "en" ? "ar" : "en");
+    return IDX[a] ? { key: a, e: IDX[a] } : IDX[b] ? { key: b, e: IDX[b] } : null;
+  }
+  const canSee = id => !!USER && (!isGuest() || isFree(id));
+  const isAdmin = () => !!USER && USER.role === "admin";
+
+  /* ---------- buttons (slots in the learn and practice pages, chips in the path) ---------- */
+  const PLAY_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="11" fill="currentColor" opacity=".18"/><path d="M9.5 7.5v9l7-4.5z" fill="currentColor"/></svg>`;
+  const MIC_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
+  function fill(root) {
+    root = root || document;
+    if (!IDX && !idxLoading) loadIndex().then(() => fill(document));
+    root.querySelectorAll(".xpslot").forEach(el => {
+      const id = el.dataset.xp, ctx = el.dataset.ctx; const p = pick(id); let h = "";
+      if (p && canSee(id)) h += `<button type="button" class="xpbtn" data-xpplay="${p.key}" data-xpid="${id}">${PLAY_SVG}<span>${TT("play")}</span><small class="keepdig">${fmt(p.e.d)}</small></button>`;
+      if (isAdmin()) {
+        const mine = IDX && IDX[keyOf(id, LANGUI)];
+        h += `<button type="button" class="btn xprec" data-xprec="${id}" data-ctx="${ctx}">${MIC_SVG}<span>${mine ? TT("reRec") : TT("rec")}${ctx === "practice" ? " " + TT("forQ") : ""}</span></button>`;
+        if (mine) h += `<button type="button" class="btn xpdel" data-xpdel="${keyOf(id, LANGUI)}">${TT("del")}</button>`;
+      }
+      el.innerHTML = h; el.hidden = !h;
+    });
+    if (IDX) root.querySelectorAll(".idea [data-train]").forEach(b => {
+      const row = b.closest(".idea"), id = b.dataset.train; const tgt = row && row.querySelector(".t b");
+      if (!tgt || tgt.querySelector(".xpchip") || !pick(id) || !canSee(id)) return;
+      tgt.insertAdjacentHTML("beforeend", ` <span class="xpchip" data-xpchip="${id}">${PLAY_SVG}${TT("chip")}</span>`);
+    });
+  }
+  document.addEventListener("click", async e => {
+    const t = e.target.closest && e.target.closest("[data-xpplay],[data-xprec],[data-xpdel],[data-xpchip]"); if (!t) return;
+    if (t.dataset.xpchip) { e.preventDefault(); const p = pick(t.dataset.xpchip); if (p) Player.open(p.key); return; }
+    if (t.dataset.xpplay) return Player.open(t.dataset.xpplay);
+    if (t.dataset.xprec) return Recorder.open(t.dataset.xprec, t.dataset.ctx);
+    if (t.dataset.xpdel) {
+      if (!confirm(TT("delQ"))) return;
+      t.disabled = true; try { await S.del(t.dataset.xpdel); if (IDX) delete IDX[t.dataset.xpdel]; } catch (er) { alert(TT("saveErr")); }
+      fill(document);
+    }
+  });
+
+  /* ---------- the stage: frozen question + blank board + ink layer, scaled to fit ---------- */
+  function snapshot(q, steps, ansIdx) {
+    const box = document.createElement("div");
+    box.innerHTML = `<div class="sheet xpq">${qHTML(q, {})}</div>`;
+    box.querySelectorAll(".trwrap").forEach(x => x.remove());
+    const opts = box.querySelectorAll(".opt"); if (opts[ansIdx]) opts[ansIdx].setAttribute("data-xa", "1");
+    box.querySelectorAll("button").forEach(b => { b.removeAttribute("data-opt"); b.setAttribute("tabindex", "-1"); });
+    const L = LETS();
+    box.insertAdjacentHTML("beforeend", `<div class="explain ok xpsol"><h4>${t("method")}</h4>${(steps || []).map(s => `<p>${s}</p>`).join("")}<p><b>${t("answer", L[ansIdx])}</b></p></div>`);
+    try { arabize(box); } catch (e) { }
+    return box.innerHTML;
+  }
+  function makeStage(host, html, opts) {
+    host.innerHTML = `<div class="xpwrap"><div class="xpstage" dir="${opts.dir || "rtl"}" style="width:${opts.w || W}px"><div class="xpcontent">${html}<div class="xpboard"><span>${TT("board")}</span></div></div><svg class="xpink" xmlns="http://www.w3.org/2000/svg"></svg></div></div>`;
+    const wrap = host.querySelector(".xpwrap"), stage = host.querySelector(".xpstage"), svg = host.querySelector(".xpink");
+    const SW = opts.w || W; const st = { wrap, stage, svg, s: 1, H: 0, W: SW };
+    st.fit = () => {
+      const w = host.clientWidth || SW; const maxS = window.innerHeight < 520 ? 1.05 : 1.7; st.s = Math.max(0.3, Math.min(maxS, w / SW));
+      st.H = stage.offsetHeight; stage.style.transform = `scale(${st.s})`; wrap.style.height = Math.ceil(st.H * st.s) + "px"; wrap.style.width = Math.floor(SW * st.s) + "px";
+      svg.setAttribute("viewBox", `0 0 ${SW} ${st.H}`); svg.setAttribute("width", SW); svg.setAttribute("height", st.H);
+    };
+    st.ro = new ResizeObserver(() => st.fit()); st.ro.observe(host);
+    window.addEventListener("orientationchange", st.fit);
+    st.destroy = () => { st.ro.disconnect(); window.removeEventListener("orientationchange", st.fit); };
+    st.fit(); return st;
+  }
+  const pathD = (pts, upto) => { let d = ""; for (let i = 0; i < upto; i += 3) d += (i ? "L" : "M") + (pts[i] / 2) + " " + (pts[i + 1] / 2); if (upto === 3) d += "l0.01 0"; return d; };
+  function modal(cls, inner) {
+    const m = document.createElement("div"); m.className = "xpm " + cls; m.setAttribute("role", "dialog"); m.setAttribute("aria-modal", "true");
+    m.innerHTML = inner; document.body.appendChild(m); document.documentElement.classList.add("xplock"); return m;
+  }
+  function unmodal(m) { m.remove(); if (!document.querySelector(".xpm")) document.documentElement.classList.remove("xplock"); }
+
+  /* ---------- recorder (admin) ---------- */
+  const Recorder = {
+    async open(id, ctx) {
+      const I = ideaById(id); if (!I) return;
+      let q, steps, a;
+      if (ctx === "practice" && RUN && RUN.qs && RUN.qs[RUN.i]) { q = RUN.qs[RUN.i]; steps = q.s && q.s.length ? q.s : [t("reviewStep", I.fast[0])]; a = q.a; }
+      else { const Ex = I.ex; q = LANGUI === "en" ? (I._exq = I._exq || bookQs(I)[0]) : Ex; steps = LANGUI === "en" ? (q.s || []) : Ex.s; a = LANGUI === "en" ? q.a : Ex.a; }
+      try { await document.fonts.ready; } catch (e) { }
+      const html = snapshot(q, steps, a);
+      const m = modal("rec", `<div class="xpbar"><b class="xptitle">${MIC_SVG}<span>${esc(I.t)}</span></b><span class="xptime keepdig" aria-live="off">0:00</span>
+        <div class="xptools"><button type="button" class="btn" data-a="mode" aria-pressed="true">✏️ <span>${TT("pen")}</span></button>
+        <span class="xpcols">${COLORS.map((c, i) => `<button type="button" data-c="${i}" style="background:${c}" aria-label="${c}" aria-pressed="${i === 0}"></button>`).join("")}</span>
+        <button type="button" class="btn" data-a="undo">${TT("undo")}</button><button type="button" class="btn" data-a="clear">${TT("clear")}</button><button type="button" class="btn" data-a="reveal">${TT("reveal")}</button></div>
+        <div class="xpacts"><button type="button" class="btn pri" data-a="go">● ${TT("start")}</button><button type="button" class="btn" data-a="x">${TT("cancel")}</button></div></div>
+        <p class="xpnote">${TT("ready")} <small>(${TT("limit")})</small></p><div class="xpscroll"><div class="xphost"></div></div>`);
+      const host = m.querySelector(".xphost"), scroller = m.querySelector(".xpscroll");
+      const st = makeStage(host, html, { dir: ar() ? "rtl" : "ltr" });
+      const R = { strokes: [], ev: [], color: 0, pen: true, rec: false, t0: 0, cur: null, revealed: false, mr: null, chunks: [], stream: null, timer: null };
+      const now = () => R.rec ? Math.round(performance.now() - R.t0) : 0;
+      const $m = s => m.querySelector(s);
+      const setMode = pen => { R.pen = pen; const b = $m('[data-a="mode"]'); b.setAttribute("aria-pressed", pen); b.innerHTML = pen ? `✏️ <span>${TT("pen")}</span>` : `✋ <span>${TT("move")}</span>`; st.svg.classList.toggle("drawing", pen); };
+      setMode(true);
+      // drawing
+      const P = e => { const r = st.svg.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / st.s * 2), Math.round((e.clientY - r.top) / st.s * 2)]; };
+      const live = [];  // svg paths of visible strokes, for undo/clear while recording
+      st.svg.addEventListener("pointerdown", e => {
+        if (!R.pen || (e.pointerType === "mouse" && e.button !== 0)) return;
+        e.preventDefault(); st.svg.setPointerCapture(e.pointerId);
+        const [x, y] = P(e); R.cur = { c: R.color, p: [x, y, now()] };
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path"); path.setAttribute("stroke", COLORS[R.color]); path.setAttribute("d", pathD(R.cur.p, 3)); st.svg.appendChild(path); R.cur.el = path;
+      });
+      st.svg.addEventListener("pointermove", e => {
+        if (!R.cur) return; e.preventDefault();
+        const evs = e.getCoalescedEvents ? e.getCoalescedEvents() : [e];
+        for (const ce of (evs.length ? evs : [e])) { const [x, y] = P(ce); const p = R.cur.p, n = p.length; if (Math.abs(p[n - 3] - x) + Math.abs(p[n - 2] - y) < 3) continue; p.push(x, y, now()); }
+        R.cur.el.setAttribute("d", pathD(R.cur.p, R.cur.p.length));
+      });
+      const end = () => { if (!R.cur) return; const s = R.cur; R.cur = null; s.e = now(); live.push(s.el); delete s.el; R.strokes.push(s); };
+      st.svg.addEventListener("pointerup", end); st.svg.addEventListener("pointercancel", end);
+      // scroll position, so the student's screen follows the teacher's view
+      let lastV = -1; scroller.addEventListener("scroll", () => { if (!R.rec) return; const y = Math.round(scroller.scrollTop / st.s); if (Math.abs(y - lastV) < 20) return; lastV = y; R.ev.push({ t: now(), k: "v", y }); }, { passive: true });
+      m.addEventListener("click", async e => {
+        const b = e.target.closest("button"); if (!b) return;
+        if (b.dataset.c != null) { R.color = +b.dataset.c; m.querySelectorAll("[data-c]").forEach(x => x.setAttribute("aria-pressed", x === b)); return; }
+        const a = b.dataset.a;
+        if (a === "mode") setMode(!R.pen);
+        if (a === "undo") { const p = live.pop(); if (p) { p.remove(); R.ev.push({ t: now(), k: "u" }); } }
+        if (a === "clear") { live.splice(0).forEach(p => p.remove()); R.ev.push({ t: now(), k: "c" }); }
+        if (a === "reveal") { R.revealed = !R.revealed; st.stage.classList.toggle("rev", R.revealed); b.textContent = R.revealed ? TT("hide") : TT("reveal"); R.ev.push({ t: now(), k: R.revealed ? "r" : "h" }); }
+        if (a === "x") { stopAll(); st.destroy(); unmodal(m); }
+        if (a === "go") start(b);
+        if (a === "stop") finish();
+      });
+      const stopAll = () => { clearInterval(R.timer); try { if (R.mr && R.mr.state !== "inactive") R.mr.stop(); } catch (e) { } if (R.stream) R.stream.getTracks().forEach(tr => tr.stop()); R.rec = false; };
+      async function start(btn) {
+        if (!navigator.mediaDevices || !window.MediaRecorder) return alert(TT("noRec"));
+        try { R.stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } }); }
+        catch (e) { return alert(TT("micErr")); }
+        const mime = ["audio/mp4", "audio/webm;codecs=opus", "audio/webm", "audio/ogg;codecs=opus"].find(x => MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(x)) || "";
+        R.mr = new MediaRecorder(R.stream, mime ? { mimeType: mime, audioBitsPerSecond: 48000 } : undefined); R.chunks = [];
+        R.mr.ondataavailable = ev => { if (ev.data && ev.data.size) R.chunks.push(ev.data); };
+        // the ink drawn before pressing start is cleared, so the timeline starts clean
+        live.splice(0).forEach(p => p.remove()); R.strokes = []; R.ev = [];
+        R.ev.push({ t: 0, k: R.revealed ? "r" : "h" }); R.ev.push({ t: 0, k: "v", y: Math.round(scroller.scrollTop / st.s) });
+        R.mr.start(1000); R.t0 = performance.now(); R.rec = true;
+        btn.dataset.a = "stop"; btn.innerHTML = "■ " + TT("stop"); btn.classList.add("recing"); m.classList.add("on");
+        m.querySelector(".xpnote").hidden = true;
+        R.timer = setInterval(() => { const ms = now(); m.querySelector(".xptime").textContent = fmt(ms); if (ms >= MAX_MS) finish(); }, 250);
+      }
+      async function finish() {
+        if (!R.rec) return; end(); const dur = now(); clearInterval(R.timer);
+        await new Promise(res => { R.mr.onstop = res; R.mr.stop(); }); R.rec = false; R.stream.getTracks().forEach(tr => tr.stop());
+        const blob = new Blob(R.chunks, { type: R.mr.mimeType || "audio/webm" });
+        const ink = encodeInk(R.strokes, R.ev, dur);
+        st.destroy(); unmodal(m);
+        Player.preview({ html, dir: ar() ? "rtl" : "ltr", ink, blob, dur, id, ctx, H: st.H });
+      }
+    }
+  };
+  function encodeInk(strokes, ev, dur) {
+    // stroke: [color, startMs, x0,y0,dt0, dx,dy,dt, ...] (deltas keep it small)
+    const s = strokes.map(k => { const p = k.p, o = [k.c, p[2], p[0], p[1]]; for (let i = 3; i < p.length; i += 3) o.push(p[i] - p[i - 3], p[i + 1] - p[i - 2], p[i + 2] - p[i - 1]); return o; });
+    return JSON.stringify({ v: 1, d: dur, s, e: ev });
+  }
+  function decodeInk(str) {
+    const o = JSON.parse(str); const strokes = o.s.map(a => { const p = [a[2], a[3], a[1]]; for (let i = 4; i < a.length; i += 3) { const n = p.length; p.push(p[n - 3] + a[i], p[n - 2] + a[i + 1], p[n - 1] + a[i + 2]); } return { c: a[0], p, t0: a[1], t1: p[p.length - 1] }; });
+    const ev = (o.e || []).slice().sort((a, b) => a.t - b.t);
+    // when does each stroke disappear (clear / undo)?
+    const order = strokes.map((s, i) => i).sort((a, b) => strokes[a].t1 - strokes[b].t1);
+    strokes.forEach(s => s.hide = Infinity);
+    for (const e of ev) {
+      if (e.k !== "c" && e.k !== "u") continue;
+      const vis = order.filter(i => strokes[i].t1 <= e.t && strokes[i].hide === Infinity);
+      if (e.k === "c") vis.forEach(i => strokes[i].hide = e.t); else if (vis.length) strokes[vis[vis.length - 1]].hide = e.t;
+    }
+    return { dur: o.d, strokes, ev };
+  }
+
+  /* ---------- audio: any recorder format → small MP3 that plays on every phone ---------- */
+  function loadLame() { return window.lamejs ? Promise.resolve() : new Promise((res, rej) => { const s = document.createElement("script"); s.src = LAME; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+  async function toMp3(blob) {
+    await loadLame();
+    const AC = window.AudioContext || window.webkitAudioContext; const ac = new AC();
+    const buf = await blob.arrayBuffer(); const dec = await new Promise((res, rej) => ac.decodeAudioData(buf.slice(0), res, rej)); try { ac.close(); } catch (e) { }
+    const SR = 22050, OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+    const off = new OAC(1, Math.max(1, Math.ceil(dec.duration * SR)), SR); const src = off.createBufferSource(); src.buffer = dec; src.connect(off.destination); src.start(0);
+    const out = await off.startRendering(); const f = out.getChannelData(0);
+    const pcm = new Int16Array(f.length); for (let i = 0; i < f.length; i++) { const v = Math.max(-1, Math.min(1, f[i])); pcm[i] = v < 0 ? v * 0x8000 : v * 0x7fff; }
+    const enc = new lamejs.Mp3Encoder(1, SR, 32); const parts = [];
+    for (let i = 0; i < pcm.length; i += 1152) { const b = enc.encodeBuffer(pcm.subarray(i, i + 1152)); if (b.length) parts.push(new Uint8Array(b)); }
+    const e = enc.flush(); if (e.length) parts.push(new Uint8Array(e));
+    return new Blob(parts, { type: "audio/mpeg" });
+  }
+  const b64 = blob => new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(",")[1] || ""); r.onerror = rej; r.readAsDataURL(blob); });
+  const fromB64 = (s, type) => { const bin = atob(s); const u = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u[i] = bin.charCodeAt(i); return new Blob([u], { type }); };
+
+  /* ---------- player (students, guests on free ideas, and the admin's preview) ---------- */
+  const Player = {
+    async open(key) {
+      const m = modal("play", `<div class="xpbar"><b class="xptitle">${PLAY_SVG}<span>${TT("play")}</span></b><div class="xpacts"><button type="button" class="btn" data-a="x">${TT("close")}</button></div></div><div class="xpscroll"><p class="xpwait">${TT("loading")}</p></div>`);
+      m.querySelector('[data-a="x"]').onclick = () => unmodal(m);
+      let data;
+      try { data = await S.get(key); } catch (e) { data = null; }
+      if (!document.body.contains(m)) return;
+      if (!data) { m.querySelector(".xpwait").textContent = TT("loadErr"); return; }
+      const meta = data.meta; const ink = [...Array(meta.ns || 0).keys()].map(i => data.parts["s" + i]).join("");
+      const aud = [...Array(meta.na || 0).keys()].map(i => data.parts["a" + i]).join("");
+      const I = ideaById(meta.idea);
+      unmodal(m);
+      this.show({ html: meta.html, dir: meta.dir, w: meta.w || 600, ink, blob: fromB64(aud, meta.mime || "audio/mpeg"), title: I ? I.t : "" });
+    },
+    preview(o) { this.show(Object.assign({ title: (ideaById(o.id) || {}).t || "", admin: true }, o)); },
+    async show(o) {
+      try { await document.fonts.ready; } catch (e) { }
+      const m = modal("play", `<div class="xpbar"><b class="xptitle">${PLAY_SVG}<span>${esc(o.title || TT("play"))}</span></b>
+        ${o.admin ? `<div class="xpacts"><button type="button" class="btn pri" data-a="save">${TT("save")}</button><button type="button" class="btn" data-a="again">${TT("again")}</button><button type="button" class="btn" data-a="x">${TT("cancel")}</button></div>` : `<div class="xpacts"><button type="button" class="btn" data-a="x">${TT("close")}</button></div>`}</div>
+        ${o.admin ? `<p class="xpnote">${TT("review")}</p>` : ""}<div class="xpscroll"><div class="xphost"></div></div>
+        <div class="xpctl"><button type="button" class="xppp" data-a="pp" aria-label="play"></button><span class="xpcur keepdig">0:00</span><input type="range" class="xpseek" min="0" max="1000" value="0" aria-label="seek"><span class="xpdur keepdig">0:00</span>
+        <button type="button" class="xpspd" data-a="spd" title="${TT("speed")}">1×</button></div>`);
+      const host = m.querySelector(".xphost"), scroller = m.querySelector(".xpscroll");
+      const st = makeStage(host, o.html, { dir: o.dir, w: o.w || W });
+      const D = decodeInk(o.ink); const dur = Math.max(D.dur || 0, 1);
+      const paths = D.strokes.map(s => { const p = document.createElementNS("http://www.w3.org/2000/svg", "path"); p.setAttribute("stroke", COLORS[s.c] || COLORS[0]); p.style.display = "none"; st.svg.appendChild(p); return p; });
+      const drawn = D.strokes.map(() => -1);
+      const audio = new Audio(); audio.preload = "auto"; const url = URL.createObjectURL(o.blob); audio.src = url;
+      const $m = s => m.querySelector(s); const pp = $m(".xppp"), seek = $m(".xpseek");
+      $m(".xpdur").textContent = fmt(dur);
+      let raf = 0, userScroll = 0, lastFollow = -1, revealed = null;
+      const T = () => Math.min(dur, audio.currentTime * 1000);
+      function frame() {
+        const t = T();
+        D.strokes.forEach((s, i) => {
+          const vis = s.t0 <= t && t < s.hide; let upto = 0;
+          if (vis) { if (t >= s.t1) upto = s.p.length; else { upto = 3; while (upto < s.p.length && s.p[upto + 2] <= t) upto += 3; } }
+          if (upto !== drawn[i]) { drawn[i] = upto; if (!upto) paths[i].style.display = "none"; else { paths[i].style.display = ""; paths[i].setAttribute("d", pathD(s.p, upto)); } }
+        });
+        let rv = false, vy = null; for (const e of D.ev) { if (e.t > t) break; if (e.k === "r") rv = true; if (e.k === "h") rv = false; if (e.k === "v") vy = e.y; }
+        if (rv !== revealed) { revealed = rv; st.stage.classList.toggle("rev", rv); }
+        // follow the teacher's view unless the student scrolled in the last 4 seconds
+        if (vy != null && Date.now() - userScroll > 4000 && !audio.paused) { const target = Math.max(0, vy * st.s); if (Math.abs(target - lastFollow) > 2) { lastFollow = target; autoScroll = true; scroller.scrollTo({ top: target, behavior: "smooth" }); } }
+        $m(".xpcur").textContent = fmt(t); if (!seeking) seek.value = Math.round(1000 * t / dur);
+        pp.classList.toggle("on", !audio.paused); pp.setAttribute("aria-label", audio.paused ? "play" : "pause");
+        raf = audio.paused ? 0 : requestAnimationFrame(frame);
+      }
+      let autoScroll = false, seeking = false;
+      scroller.addEventListener("scroll", () => { if (autoScroll) { clearTimeout(scroller._t); scroller._t = setTimeout(() => autoScroll = false, 700); return; } userScroll = Date.now(); }, { passive: true });
+      ["wheel", "touchmove"].forEach(ev => scroller.addEventListener(ev, () => { autoScroll = false; userScroll = Date.now(); }, { passive: true }));
+      const loop = () => { if (!raf) raf = requestAnimationFrame(frame); };
+      audio.addEventListener("play", loop); audio.addEventListener("pause", () => { cancelAnimationFrame(raf); raf = 0; frame(); });
+      audio.addEventListener("ended", () => { frame(); });
+      audio.addEventListener("seeked", () => frame());
+      pp.onclick = () => { if (audio.paused) { if (T() >= dur - 50) audio.currentTime = 0; audio.play().catch(() => { }); } else audio.pause(); };
+      seek.addEventListener("input", () => { seeking = true; audio.currentTime = (+seek.value / 1000) * dur / 1000; frame(); });
+      seek.addEventListener("change", () => { seeking = false; });
+      const SP = [1, 1.25, 1.5, 0.75]; let spi = 0;
+      $m(".xpspd").onclick = () => { spi = (spi + 1) % SP.length; audio.playbackRate = SP[spi]; $m(".xpspd").textContent = SP[spi] + "×"; };
+      const close = () => { audio.pause(); cancelAnimationFrame(raf); URL.revokeObjectURL(url); st.destroy(); unmodal(m); document.removeEventListener("keydown", onKey); };
+      const onKey = e => { if (e.key === "Escape") close(); if (e.key === " " && e.target === document.body) { e.preventDefault(); pp.click(); } };
+      document.addEventListener("keydown", onKey);
+      $m('[data-a="x"]').onclick = close;
+      if (o.admin) {
+        $m('[data-a="again"]').onclick = () => { close(); Recorder.open(o.id, o.ctx || "learn"); };
+        $m('[data-a="save"]').onclick = async () => {
+          const b = $m('[data-a="save"]'); b.disabled = true; b.textContent = TT("saving");
+          try {
+            let mp3; try { mp3 = await toMp3(o.blob); } catch (e) { mp3 = null; }
+            const aud = await b64(mp3 || o.blob); const ink = chunks(o.ink, "s"), au = chunks(aud, "a");
+            const meta = { idea: o.id, lang: LANGUI, dir: o.dir, free: isFree(o.id), dur: Math.round(o.dur), w: W, html: o.html, mime: mp3 ? "audio/mpeg" : (o.blob.type || "audio/webm"), ns: Object.keys(ink).length, na: Object.keys(au).length, by: USER.code || "" };
+            await S.save(keyOf(o.id, LANGUI), meta, Object.assign({}, ink, au));
+            await loadIndex(true); close(); fill(document);
+            const fl = document.createElement("div"); fl.className = "xptoast"; fl.textContent = TT("saved"); document.body.appendChild(fl); setTimeout(() => fl.remove(), 2600);
+          } catch (e) { console.error(e); b.disabled = false; b.textContent = TT("save"); alert(TT("saveErr")); }
+        };
+      }
+      frame();
+      audio.play().catch(() => { });   // autoplay may be blocked; the play button works
+    }
+  };
+
+  /* ---------- styles ---------- */
+  const css = document.createElement("style"); css.textContent = `
+.xpslot{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:0 0 12px}.xpslot[hidden]{display:none}
+.qmeta .xpslot{margin:0}
+.xpbtn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:9px 16px 9px 12px;background:linear-gradient(120deg,#f97316,#f59e0b);color:#fff;font:800 15px/1.2 var(--f-display);cursor:pointer;box-shadow:0 6px 16px rgba(249,115,22,.3)}
+.xpbtn small{background:rgba(255,255,255,.25);border-radius:999px;padding:1px 8px;font-size:12.5px}
+.xpbtn:focus-visible,.xpchip:focus-visible{outline:3px solid #0f766e;outline-offset:2px}
+.xprec{border-color:#dc2626!important;color:#b91c1c!important}.xpdel{color:var(--muted)!important}
+.xpchip{display:inline-flex;align-items:center;gap:3px;vertical-align:middle;font:800 11.5px/1.8 var(--f-display);color:#c2410c;background:#fff1e6;border-radius:999px;padding:0 8px 0 6px;cursor:pointer}
+.xpchip svg{width:14px;height:14px}
+html.xplock,html.xplock body{overflow:hidden}
+.xpm{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;flex-direction:column;padding:env(safe-area-inset-top,0) env(safe-area-inset-right,0) env(safe-area-inset-bottom,0) env(safe-area-inset-left,0)}
+.xpbar{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:10px 14px;background:var(--surface);border-bottom:1px solid var(--line)}
+.xptitle{display:flex;align-items:center;gap:8px;font-family:var(--f-display);font-weight:900;min-width:0;flex:1 1 200px}
+.xptitle span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.xptime{font:900 18px var(--f-display);color:var(--muted);min-width:52px;text-align:center}
+.xpm.on .xptime{color:#dc2626}.xpm.on .xptime::before{content:"● ";animation:xpbl 1s steps(2) infinite}
+@keyframes xpbl{50%{opacity:.2}}
+.xptools,.xpacts{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.xpcols{display:flex;gap:5px;padding:0 4px}.xpcols button{width:26px;height:26px;border-radius:50%;border:3px solid var(--surface);box-shadow:0 0 0 1px #cbd5e1;padding:0;cursor:pointer}
+.xpcols button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--ink)}
+.btn.recing{background:#dc2626;border-color:#dc2626}
+.xpnote{margin:0;padding:8px 14px;background:var(--hl-soft);color:var(--ink);font-size:14px}
+.xpscroll{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:12px;overscroll-behavior:contain}
+.xphost{max-width:960px;margin:0 auto}
+.xpwrap{position:relative;width:100%;overflow:hidden;margin:0 auto}
+.xpstage{position:absolute;top:0;left:0;transform-origin:0 0}
+.xpcontent{pointer-events:none;user-select:none;-webkit-user-select:none}
+.xpstage .sheet{margin:0;box-shadow:none}
+.xpstage .opts.c4{grid-template-columns:repeat(2,minmax(0,1fr))}.xpstage .opts.c2{grid-template-columns:1fr}
+.xpstage .qfig{overflow:visible}
+.xpstage .xpsol{visibility:hidden}.xpstage.rev .xpsol{visibility:visible}
+.xpm.rec .xpstage:not(.rev) .xpsol{visibility:visible;opacity:.22;filter:grayscale(1)}
+.xpstage.rev .opt[data-xa]{border-color:#16a34a;background:#ecfdf3}.xpstage.rev .opt[data-xa] .bub{background:#16a34a;border-color:#16a34a;color:#fff}
+.xpboard{height:${BOARD_H}px;margin-top:12px;border-radius:14px;border:1.5px dashed #cbd5e1;background:#fff;background-image:linear-gradient(#eef2f7 1px,transparent 1px);background-size:100% 32px;position:relative}
+.xpboard span{position:absolute;top:8px;inset-inline-start:12px;color:#94a3b8;font-size:13px;font-weight:700}
+.xpink{position:absolute;top:0;left:0;overflow:visible}
+.xpink path{fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.xpink.drawing{cursor:crosshair;touch-action:none}
+.xpm.rec .xpink{pointer-events:none}.xpm.rec .xpink.drawing{pointer-events:auto}
+.xpm.play .xpink{pointer-events:none}
+.xpctl{display:flex;align-items:center;gap:10px;padding:10px 14px calc(10px + env(safe-area-inset-bottom,0px));background:var(--surface);border-top:1px solid var(--line)}
+.xppp{flex:none;width:46px;height:46px;border-radius:50%;border:0;background:var(--acc);color:#fff;cursor:pointer;position:relative}
+.xppp::before{content:"";position:absolute;inset:0;margin:auto;width:0;height:0;border-style:solid;border-width:9px 0 9px 15px;border-color:transparent transparent transparent #fff;transform:translateX(2px)}
+.xppp.on::before{width:14px;height:16px;border:0;border-inline:5px solid #fff;transform:none;box-sizing:border-box}
+.xpseek{flex:1;min-width:60px;accent-color:var(--acc);direction:ltr}
+.xpcur,.xpdur{font:800 14px var(--f-display);color:var(--muted);min-width:40px;text-align:center}
+.xpspd{flex:none;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 10px;font:800 13px var(--f-display);cursor:pointer}
+.xpwait{text-align:center;color:var(--muted);padding:40px 0}
+.xptoast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:95;background:#15803d;color:#fff;border-radius:999px;padding:10px 20px;font:800 15px var(--f-display);box-shadow:0 8px 20px rgba(0,0,0,.2)}
+@media (max-width:560px){.xpbar{padding:8px 10px}.xptools .btn,.xpacts .btn{padding:6px 9px;font-size:13px}.xpscroll{padding:8px}}
+@media print{.xpslot,.xpchip,.xpm{display:none!important}}`;
+  document.head.appendChild(css);
+
+  return { loadIndex, fill, _mem: MEM, _decode: decodeInk };
+})();
+</script>
 <script>/* ================== app ================== */
 const SEC_PER_Q = 75, MAX_PER_IDEA = 10, PRACTICE_N = 5;
 const SEENQ = {}; // questions already shown per idea in this session, so a retry gets new ones
@@ -1399,6 +1799,7 @@ function go(v, arg, keep) {
   const app = $("#app");
   const fn = { path: viewPath, learn: viewLearn, practice: viewQuiz, build: viewBuild, exam: viewQuiz, result: viewResult, mine: viewMine, report: viewReport, admin: viewAdmin, subscribe: viewSubscribe }[v];
   app.innerHTML = fn(arg); bind[v] && bind[v](arg); arabize(app);
+  try { XP.fill(app); } catch (e) { }
   if (!keep) window.scrollTo({ top: 0 });
 }
 function stopTimer() { if (TIMER) { clearInterval(TIMER); TIMER = null; } }
@@ -1500,7 +1901,7 @@ function nextIdea(I) { const a = allIdeas(); const i = a.findIndex(x => x.id ===
 function viewLearn(id) {
   const I = ideaById(id); CUR = I; const Ex = I.ex; const L = LETS();
   let h = `<div class="crumb"><button type="button" id="back">${t("tabPath")}</button> ‹ <span>${I._dom.title}</span></div>
-  <div class="lhead"><span class="num">${t("idea", I.n)}</span><div><h1>${I.t}</h1><p>${I.concept}</p></div></div>
+  <div class="lhead"><span class="num">${t("idea", I.n)}</span><div><h1>${I.t}</h1><p>${I.concept}</p></div></div><div class="xpslot" data-xp="${id}" data-ctx="learn" hidden></div>
   <div class="panel fast"><h3>${BOLT}${t("quick")}</h3><ol>${I.fast.map(s => `<li>${s}</li>`).join("")}</ol></div>`;
   if (I.trap) h += `<div class="trap"><b>${t("trap")}</b> ${I.trap}</div>`;
   if (I.table) h += `<div class="rel">${I.table.map(([a, b]) => `<div><b>${a}</b>${b}</div>`).join("")}</div>`;
@@ -1558,7 +1959,7 @@ function viewQuiz() {
     const picked = r.ans[r.i];
     let h = `<div class="crumb"><button type="button" id="back">${t("tabPath")}</button> ‹ <button type="button" id="toLearn">${I.t}</button> ‹ <span>${t("practice")}</span></div>
     <div class="ebar"><b class="disp">${t("qOf", r.i + 1, r.qs.length)}</b><div class="tprog"><i style="width:${100 * (r.i + (picked != null ? 1 : 0)) / r.qs.length}%"></i></div><span class="note">${t("correctSoFar", r.ans.filter((a, k) => a === r.qs[k].a).length)}</span></div>
-    <div class="sheet"><div class="qmeta"><span>${t("idea", I.n)}: <b>${I.t}</b></span></div>${qHTML(q, { reveal: picked != null ? q.a : null, mark: picked, pickable: picked == null })}`;
+    <div class="sheet"><div class="qmeta"><span>${t("idea", I.n)}: <b>${I.t}</b></span><span class="xpslot" data-xp="${I.id}" data-ctx="practice" hidden></span></div>${qHTML(q, { reveal: picked != null ? q.a : null, mark: picked, pickable: picked == null })}`;
     if (picked != null) {
       const okA = picked === q.a;
       h += `<div class="explain ${okA ? "ok" : "no"}"><h4>${okA ? t("right") : t("rightIs", L[q.a])}</h4>${q.s && q.s.length ? q.s.map(s => `<p>${s}</p>`).join("") : `<p>${t("reviewStep", I.fast[0])}</p>`}</div>
