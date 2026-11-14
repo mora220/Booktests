@@ -7591,7 +7591,7 @@ const SUB = {
   salesName: { ar: "شركة بوت للتسويق", en: "Bot Marketing Company" },
   salesPhone: "0597705599", salesWa: "966597705599",
   supName: { ar: "أ. محمد رجب", en: "Mr. Mohamed Ragab" },
-  supPhone: "", supWa: ""
+  supPhone: "0564826388", supWa: "966564826388"
 };
 const SUBTX = {
   ar: {
@@ -7675,7 +7675,7 @@ function subHTML(lang) {
   <li><div>${T.s2(`${SUB.salesName[L]} <b class="keepdig" dir="ltr">${SUB.salesPhone}</b>`)}<br><a class="wabtn" href="${wa}" target="_blank" rel="noopener">${WA_SVG}${T.waSales}</a></div></li>
   <li><div>${T.s3}</div></li></ol>
   <div class="subcontacts"><a href="https://wa.me/${SUB.salesWa}" target="_blank" rel="noopener"><small>${T.sales}</small><b>${SUB.salesName[L]}</b><span class="keepdig">${SUB.salesPhone}</span></a>
-  <div class="supnote"><small>${T.sup}</small><b>${SUB.supName[L]}</b></div></div></div></section>`;
+  <a href="https://wa.me/${SUB.supWa}" target="_blank" rel="noopener"><small>${T.sup}</small><b>${SUB.supName[L]}</b><span class="keepdig">${SUB.supPhone}</span></a></div></div></section>`;
 }
 function copyFallback(txt) { const ta = document.createElement("textarea"); ta.value = txt; ta.setAttribute("readonly", ""); ta.style.position = "fixed"; ta.style.opacity = "0"; document.body.appendChild(ta); ta.select(); ta.setSelectionRange(0, txt.length); try { document.execCommand("copy"); } catch (e) { } ta.remove(); }
 function copyText(txt) {
