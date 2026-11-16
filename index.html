@@ -950,7 +950,8 @@ const FirebaseBackend = {
     if (s) { try { await this.sec().signInWithEmailAndPassword(emailFor(code), s.password); await this.sec().currentUser.delete(); } catch (e) { } try { await this.sec().signOut(); } catch (e) { } }
     const atts = await this.db.collection("attempts").where("uid", "==", uid).get();
     const ans = await this.db.collection("examAnswers").where("uid", "==", uid).get();
-    const b = this.db.batch(); atts.docs.forEach(d => b.delete(d.ref)); ans.docs.forEach(d => b.delete(d.ref)); b.delete(this.db.collection("users").doc(uid)); b.delete(this.db.collection("secrets").doc(uid)); await b.commit();
+    let tok = null; try { const u = await this.db.collection("users").doc(uid).get(); tok = u.exists ? u.data().shareToken : null; } catch (e) { }
+    const b = this.db.batch(); if (tok) b.delete(this.db.collection("publicReports").doc(tok)); atts.docs.forEach(d => b.delete(d.ref)); ans.docs.forEach(d => b.delete(d.ref)); b.delete(this.db.collection("users").doc(uid)); b.delete(this.db.collection("secrets").doc(uid)); await b.commit();
   },
 };
 
